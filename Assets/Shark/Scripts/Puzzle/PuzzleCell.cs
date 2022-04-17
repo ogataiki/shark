@@ -32,7 +32,6 @@ public class PuzzleCell : MonoBehaviour
   {
     _indexX = indexX;
     _indexY = indexY;
-
     UpdateCellType(cellType);
   }
   public void UpdateCellType(PuzzleLevelMaster.CellTypeEnum cellType)

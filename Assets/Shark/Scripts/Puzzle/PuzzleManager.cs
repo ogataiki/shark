@@ -50,12 +50,43 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
       return;
     }
 
-    // TODO : 消す演出や消した後に上のやつを下に落とす処理を入れる
+    // TODO : 消す演出や消した後に上のやつを下に落とす演出を入れる
 
     // 消す
-    foreach(var c in chainCells)
+    foreach (var c in chainCells)
     {
       c.UpdateCellType(PuzzleLevelMaster.CellTypeEnum.VOID);
+    }
+
+    // 盤面整理
+    LevelRemap(level);
+  }
+
+  // 消えた後に再配置する
+  public void LevelRemap(PuzzleLevel level)
+  {
+    var cells = level.CellList;
+
+    for (var x = 0; x < level.CellHorizontalCount(); x++)
+    {
+      var verticalCells = cells.Where(_ => _.IndexX == x).OrderBy(_ => _.IndexY).ToList();
+      for (var y = 0; y < level.CellVerticalCount(); y++)
+      {
+        var cell = verticalCells[y];
+        if (cell.CellType != PuzzleLevelMaster.CellTypeEnum.VOID) { continue; }
+
+        // 入れ替え対象を抽出
+        for (var replaceY = y + 1; replaceY < verticalCells.Count; replaceY++)
+        {
+          var replacementCell = verticalCells[replaceY];
+          if (replacementCell.CellType != PuzzleLevelMaster.CellTypeEnum.VOID)
+          {
+            cell.UpdateCellType(replacementCell.CellType);
+            replacementCell.UpdateCellType(PuzzleLevelMaster.CellTypeEnum.VOID);
+            break;
+          }
+        }
+      }
     }
   }
 
