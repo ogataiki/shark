@@ -1,10 +1,14 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class PuzzleLevel : MonoBehaviour
 {
   [SerializeField] Transform cellParent;
+  [SerializeField] PuzzleCell cellPrefab;
   [SerializeField] List<float> cellPositionXList; // 左から右
   [SerializeField] List<float> cellPositionYList; // 下から上
 
@@ -12,6 +16,9 @@ public class PuzzleLevel : MonoBehaviour
   public List<PuzzleCell> CellList { get { return _cellList; } }
 
   PuzzleLevelMaster _level;
+  public PuzzleLevelMaster LevelMasterData { get { return _level; } }
+
+  public UnityEvent<PuzzleLevel, PuzzleCell> onCellClick;
 
   public int CellHorizontalCount()
   {
@@ -45,9 +52,11 @@ public class PuzzleLevel : MonoBehaviour
         {
           currentCellType = _level.GetRandomCellType();
         }
-        var cell = Instantiate(PuzzleManager.Instance.PuzzleCellPrefabList[(int)currentCellType], cellParent);
-        cell.Init(x, y);
+        var cell = Instantiate(cellPrefab, cellParent);
+        cell.Init(currentCellType, x, y);
         cell.transform.localPosition = new Vector3(cellPositionXList[x], cellPositionYList[y], 0f);
+        cell.onClick.RemoveAllListeners();
+        cell.onClick.AddListener(OnClickCell);
         cell.gameObject.SetActive(true);
         _cellList.Add(cell);
       }
@@ -61,6 +70,11 @@ public class PuzzleLevel : MonoBehaviour
       Destroy(cell.gameObject);
     }
     _cellList.Clear();
+  }
+
+  public void OnClickCell(PuzzleCell cell)
+  {
+    onCellClick?.Invoke(this, cell);
   }
 
   void Start()
