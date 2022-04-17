@@ -3,14 +3,56 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
 {
   [SerializeField] List<PuzzleLevel> puzzleLevelPrefabList;
   [SerializeField] List<PuzzleLevelMaster> puzzleLevelMasterList;
 
+
+  // UI
+  [SerializeField] GameObject gameClearUI;
+  [SerializeField] Button nextLevelButton;
+
+  [SerializeField] GameObject gameOverUI;
+  [SerializeField] Button retryLevelButton;
+
+  [SerializeField] int levelMax = 1;
+
   int _currentLevel = 0;
   PuzzleLevel _currentPuzzleLevel = null;
+
+  private void Awake()
+  {
+    nextLevelButton.onClick.AddListener(OnClickNextLevelButton);
+    retryLevelButton.onClick.AddListener(OnClickRetryLevelButton);
+  }
+
+  private void Start()
+  {
+    DeployCurrentLevel();
+  }
+
+  public void OnClickNextLevelButton()
+  {
+    DeployNextLevel();
+
+    GameStart();
+  }
+
+  public void OnClickRetryLevelButton()
+  {
+    ResetCurrentLevel();
+
+    GameStart();
+  }
+
+  public void GameStart()
+  {
+    gameClearUI.SetActive(false);
+    gameOverUI.SetActive(false);
+  }
 
   // 現在攻略中のレベルを展開
   public void DeployCurrentLevel()
@@ -33,10 +75,22 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
     _currentPuzzleLevel.onCellClick.RemoveAllListeners();
     _currentPuzzleLevel.onCellClick.AddListener(OnClickCell);
   }
-
-  private void Start()
+  public void DeployNextLevel()
   {
+    _currentLevel += 1;
+    _currentLevel = Math.Min(levelMax, _currentLevel);
+
+    if (_currentPuzzleLevel != null)
+    {
+      Destroy(_currentPuzzleLevel.gameObject);
+      _currentPuzzleLevel = null;
+    }
     DeployCurrentLevel();
+  }
+  public void ResetCurrentLevel()
+  {
+    if (_currentPuzzleLevel == null) { return; }
+    _currentPuzzleLevel.Init(puzzleLevelMasterList[_currentLevel]);
   }
 
   public void OnClickCell(PuzzleLevel level, PuzzleCell cell)
@@ -60,6 +114,13 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
 
     // 盤面整理
     LevelRemap(level);
+
+    var state = GameState(level);
+    switch(state)
+    {
+      case GameStateEnum.GameClear: ToGameClear(); break;
+      case GameStateEnum.GameOver: ToGameOver(); break;
+    }
   }
 
   // 消えた後に再配置する
@@ -88,6 +149,53 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
         }
       }
     }
+  }
+
+  public enum GameStateEnum
+  {
+    Wait = 0, Idle, GameClear, GameOver,
+  }
+  public GameStateEnum GameState(PuzzleLevel level)
+  {
+    var cells = level.CellList;
+    var voidAll = true;
+    foreach(var cell in cells)
+    {
+      if (cell.CellType == PuzzleLevelMaster.CellTypeEnum.VOID) { continue; }
+
+      voidAll = false;
+
+      // 一つでも連結セルが見つかったらゲーム有効
+
+      var lIndexX = cell.IndexX - 1;
+      PuzzleCell lCell = (lIndexX < 0) ? null : cells.First(_ => _.IndexX == lIndexX && _.IndexY == cell.IndexY);
+      if (lCell != null && lCell.CellType == cell.CellType) { return GameStateEnum.Idle; }
+
+      var rIndexX = cell.IndexX + 1;
+      PuzzleCell rCell = (rIndexX < 0) ? null : cells.First(_ => _.IndexX == rIndexX && _.IndexY == cell.IndexY);
+      if (rCell != null && rCell.CellType == cell.CellType) { return GameStateEnum.Idle; }
+
+      var uIndexY = cell.IndexY - 1;
+      PuzzleCell uCell = (uIndexY < 0) ? null : cells.First(_ => _.IndexX == cell.IndexX && _.IndexY == uIndexY);
+      if (uCell != null && uCell.CellType == cell.CellType) { return GameStateEnum.Idle; }
+
+      var tIndexY = cell.IndexY + 1;
+      PuzzleCell tCell = (tIndexY < 0) ? null : cells.First(_ => _.IndexX == cell.IndexX && _.IndexY == tIndexY);
+      if (tCell != null && tCell.CellType == cell.CellType) { return GameStateEnum.Idle; }
+    }
+
+    // 全てVOIDセルならゲームクリア、連結セルが一つもないならゲームオーバー
+    return voidAll ? GameStateEnum.GameClear : GameStateEnum.GameOver;
+  }
+
+  public void ToGameClear()
+  {
+    gameClearUI.SetActive(true);
+  }
+
+  public void ToGameOver()
+  {
+    gameOverUI.SetActive(true);
   }
 
   //=====================
