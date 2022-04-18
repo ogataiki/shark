@@ -5,9 +5,8 @@ using UnityEngine.Events;
 
 public class PuzzleCell : MonoBehaviour
 {
-  [SerializeField] PuzzleCellSprite spriteVoid;
-  [SerializeField] PuzzleCellSprite spriteTestPlain;
-  [SerializeField] PuzzleCellSprite spriteTestRed;
+  [Header("PuzzleLevelMaster.CellTypeEnum の値をindexとする")]
+  [SerializeField] List<PuzzleCellSprite> sprites;
 
   PuzzleLevelMaster.CellTypeEnum _cellType;
   public PuzzleLevelMaster.CellTypeEnum CellType { get { return _cellType; } }
@@ -15,23 +14,24 @@ public class PuzzleCell : MonoBehaviour
   public int IndexX { get { return _indexX; } }
   int _indexY = 0;
   public int IndexY { get { return _indexY; } }
+  float _spriteScale = 1f;
 
   public UnityEvent<PuzzleCell> onClick;
 
   private void Awake()
   {
-    spriteVoid.onClick.RemoveAllListeners();
-    spriteVoid.onClick.AddListener(OnClick);
-    spriteTestPlain.onClick.RemoveAllListeners();
-    spriteTestPlain.onClick.AddListener(OnClick);
-    spriteTestRed.onClick.RemoveAllListeners();
-    spriteTestRed.onClick.AddListener(OnClick);
+    foreach(var s in sprites)
+    {
+      s.onClick.RemoveAllListeners();
+      s.onClick.AddListener(OnClick);
+    }
   }
 
-  public void Init(PuzzleLevelMaster.CellTypeEnum cellType, int indexX, int indexY)
+  public void Init(PuzzleLevelMaster.CellTypeEnum cellType, int indexX, int indexY, float scale)
   {
     _indexX = indexX;
     _indexY = indexY;
+    _spriteScale = scale;
     UpdateCellType(cellType);
   }
   public void UpdateCellType(PuzzleLevelMaster.CellTypeEnum cellType)
@@ -41,21 +41,19 @@ public class PuzzleCell : MonoBehaviour
   }
   public void CellSetting()
   {
-    spriteVoid.gameObject.SetActive(false);
-    spriteTestPlain.gameObject.SetActive(false);
-    spriteTestRed.gameObject.SetActive(false);
+    foreach (var s in sprites)
+    {
+      s.transform.localScale = new Vector3(_spriteScale, _spriteScale, _spriteScale);
+      s.gameObject.SetActive(false);
+    }
+
     var currentCellSprite = CurrentCellSprite();
     currentCellSprite.gameObject.SetActive(true);
   }
   public PuzzleCellSprite CurrentCellSprite()
   {
-    switch (_cellType)
-    {
-      case PuzzleLevelMaster.CellTypeEnum.VOID: return spriteVoid;
-      case PuzzleLevelMaster.CellTypeEnum.TEST_PLAIN: return spriteTestPlain;
-      case PuzzleLevelMaster.CellTypeEnum.TEST_RED: return spriteTestRed;
-      default: return null;
-    }
+    if ((int)_cellType >= sprites.Count) { return null; }
+    return sprites[(int)_cellType];
   }
 
   public void OnClick(PuzzleCellSprite cellSprite)

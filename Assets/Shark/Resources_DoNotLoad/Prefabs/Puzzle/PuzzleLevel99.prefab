@@ -127,7 +127,7 @@ GameObject:
   - component: {fileID: 9144238524001701491}
   - component: {fileID: 9144238524001701490}
   m_Layer: 0
-  m_Name: PuzzleLevel63
+  m_Name: PuzzleLevel99
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -164,28 +164,32 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cellParent: {fileID: 9144238523762046504}
   cellPrefab: {fileID: 4020689622522304491, guid: 435f9b42b7f13481992444cf01451b19, type: 3}
-  cellOffset: 0.55
-  cellHorizontalCount: 7
-  cellVerticalCount: 9
+  cellOffset: 0.44
+  cellHorizontalCount: 9
+  cellVerticalCount: 11
   cellPositionXList:
-  - -1.65
-  - -1.1
-  - -0.55
+  - -1.76
+  - -1.32
+  - -0.88
+  - -0.44
   - 0
-  - 0.55
-  - 1.1
-  - 1.65
+  - 0.44
+  - 0.88
+  - 1.32
+  - 1.76
   cellPositionYList:
   - -2.2
-  - -1.65
-  - -1.1
-  - -0.55
+  - -1.76
+  - -1.32
+  - -0.88
+  - -0.44
   - 0
-  - 0.55
-  - 1.1
-  - 1.65
+  - 0.44
+  - 0.88
+  - 1.32
+  - 1.76
   - 2.2
-  cellScale: 0.485
+  cellScale: 0.4
   onCellClick:
     m_PersistentCalls:
       m_Calls: []

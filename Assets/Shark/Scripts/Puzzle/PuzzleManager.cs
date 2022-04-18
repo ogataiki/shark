@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,15 +13,18 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
 
 
   // UI
+  [SerializeField] GameObject gameUI;
+  [SerializeField] TextMeshProUGUI currentLevelText;
+  [SerializeField] TextMeshProUGUI playCountText;
+
   [SerializeField] GameObject gameClearUI;
   [SerializeField] Button nextLevelButton;
 
   [SerializeField] GameObject gameOverUI;
   [SerializeField] Button retryLevelButton;
 
-  [SerializeField] int levelMax = 1;
-
   int _currentLevel = 0;
+  int _playCount = 0;
   PuzzleLevel _currentPuzzleLevel = null;
 
   private void Awake()
@@ -32,6 +36,9 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   private void Start()
   {
     DeployCurrentLevel();
+
+    GameStart();
+    ResetPlayCount();
   }
 
   public void OnClickNextLevelButton()
@@ -50,6 +57,7 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
 
   public void GameStart()
   {
+    gameUI.SetActive(true);
     gameClearUI.SetActive(false);
     gameOverUI.SetActive(false);
   }
@@ -57,18 +65,28 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   // 現在攻略中のレベルを展開
   public void DeployCurrentLevel()
   {
-    if (puzzleLevelPrefabList.Count <= _currentLevel)
+    if (puzzleLevelMasterList.Count <= _currentLevel)
     {
-      Debug.LogError($"レベル[{_currentLevel}]の puzzle ground が登録されていません。");
+      Debug.LogError($"レベル[{_currentLevel}]の puzzle level master が登録されていません。");
       return;
     }
 
-    var groundPrefab = puzzleLevelPrefabList[_currentLevel];
-    if (groundPrefab == null)
+    var master = puzzleLevelMasterList[_currentLevel];
+
+    if (puzzleLevelPrefabList.Count <= (int)master.CellCount)
     {
-      Debug.LogError($"レベル[{_currentLevel}]の puzzle ground が null です。");
+      Debug.LogError($"マスタのCellCount[{master.CellCount}]の puzzle ground が登録されていません。");
       return;
     }
+
+    var groundPrefab = puzzleLevelPrefabList[(int)master.CellCount];
+    if (groundPrefab == null)
+    {
+      Debug.LogError($"マスタのCellCount[{master.CellCount}]の puzzle ground が null です。");
+      return;
+    }
+
+    currentLevelText.text = $"レベル {_currentLevel}";
 
     _currentPuzzleLevel = Instantiate(groundPrefab, this.transform);
     _currentPuzzleLevel.Init(puzzleLevelMasterList[_currentLevel]);
@@ -78,7 +96,7 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   public void DeployNextLevel()
   {
     _currentLevel += 1;
-    _currentLevel = Math.Min(levelMax, _currentLevel);
+    _currentLevel = Math.Min(puzzleLevelMasterList.Count, _currentLevel);
 
     if (_currentPuzzleLevel != null)
     {
@@ -97,12 +115,14 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   {
     Debug.Log($"[PuzzleManager] OnClickCell[{level.LevelMasterData.CellCount}, {cell.CellType}]");
 
-    var chainCells = GetChainCells(level, cell);
+    var chainCells = level.GetChainCells(cell);
     if (chainCells.Count < 2)
     {
       // TODO : 消せないよということを表す何らかの表現を入れる
       return;
     }
+
+    AddPlayCount();
 
     // TODO : 消す演出や消した後に上のやつを下に落とす演出を入れる
 
@@ -113,7 +133,7 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
     }
 
     // 盤面整理
-    LevelRemap(level);
+    level.LevelRemap();
 
     var state = GameState(level);
     switch(state)
@@ -123,33 +143,6 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
     }
   }
 
-  // 消えた後に再配置する
-  public void LevelRemap(PuzzleLevel level)
-  {
-    var cells = level.CellList;
-
-    for (var x = 0; x < level.CellHorizontalCount(); x++)
-    {
-      var verticalCells = cells.Where(_ => _.IndexX == x).OrderBy(_ => _.IndexY).ToList();
-      for (var y = 0; y < level.CellVerticalCount(); y++)
-      {
-        var cell = verticalCells[y];
-        if (cell.CellType != PuzzleLevelMaster.CellTypeEnum.VOID) { continue; }
-
-        // 入れ替え対象を抽出
-        for (var replaceY = y + 1; replaceY < verticalCells.Count; replaceY++)
-        {
-          var replacementCell = verticalCells[replaceY];
-          if (replacementCell.CellType != PuzzleLevelMaster.CellTypeEnum.VOID)
-          {
-            cell.UpdateCellType(replacementCell.CellType);
-            replacementCell.UpdateCellType(PuzzleLevelMaster.CellTypeEnum.VOID);
-            break;
-          }
-        }
-      }
-    }
-  }
 
   public enum GameStateEnum
   {
@@ -172,7 +165,7 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
       if (lCell != null && lCell.CellType == cell.CellType) { return GameStateEnum.Idle; }
 
       var rIndexX = cell.IndexX + 1;
-      PuzzleCell rCell = (rIndexX < 0) ? null : cells.First(_ => _.IndexX == rIndexX && _.IndexY == cell.IndexY);
+      PuzzleCell rCell = (rIndexX >= level.CellHorizontalCount) ? null : cells.First(_ => _.IndexX == rIndexX && _.IndexY == cell.IndexY);
       if (rCell != null && rCell.CellType == cell.CellType) { return GameStateEnum.Idle; }
 
       var uIndexY = cell.IndexY - 1;
@@ -180,7 +173,7 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
       if (uCell != null && uCell.CellType == cell.CellType) { return GameStateEnum.Idle; }
 
       var tIndexY = cell.IndexY + 1;
-      PuzzleCell tCell = (tIndexY < 0) ? null : cells.First(_ => _.IndexX == cell.IndexX && _.IndexY == tIndexY);
+      PuzzleCell tCell = (tIndexY >= level.CellVerticalCount) ? null : cells.First(_ => _.IndexX == cell.IndexX && _.IndexY == tIndexY);
       if (tCell != null && tCell.CellType == cell.CellType) { return GameStateEnum.Idle; }
     }
 
@@ -198,80 +191,14 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
     gameOverUI.SetActive(true);
   }
 
-  //=====================
-  // 連結セルの取得
-  //=====================
-  HashSet<PuzzleCell> _chainCellsCache = new HashSet<PuzzleCell>();
-
-  // ベースのセルを起点に連結範囲を探索して取得
-  public HashSet<PuzzleCell> GetChainCells(PuzzleLevel level, PuzzleCell baseCell)
+  public void AddPlayCount()
   {
-    _chainCellsCache.Clear();
-    _chainCellsCache.Add(baseCell);
-    GetChainCellCross(level, baseCell);
-    return new HashSet<PuzzleCell>(_chainCellsCache);
+    _playCount += 1;
+    playCountText.text = $"操作 {_playCount} 回";
   }
-
-  public void GetChainCellCross(PuzzleLevel level, PuzzleCell baseCell)
+  public void ResetPlayCount()
   {
-    GetChainCellUp(level, baseCell, (addCell) => { GetChainCellCross(level, addCell); });
-    GetChainCellDown(level, baseCell, (addCell) => { GetChainCellCross(level, addCell); });
-    GetChainCellRight(level, baseCell, (addCell) => { GetChainCellCross(level, addCell); });
-    GetChainCellLeft(level, baseCell, (addCell) => { GetChainCellCross(level, addCell); });
+    _playCount = 0;
+    playCountText.text = $"操作 {_playCount} 回";
   }
-
-  // 右方向の探索
-  public void GetChainCellRight(PuzzleLevel level, PuzzleCell baseCell, Action<PuzzleCell> addCallback)
-  {
-    GetChainCellHorizontal(level, baseCell, 1, addCallback);
-  }
-  // 左方向の探索
-  public void GetChainCellLeft(PuzzleLevel level, PuzzleCell baseCell, Action<PuzzleCell> addCallback)
-  {
-    GetChainCellHorizontal(level, baseCell, -1, addCallback);
-  }
-  // 上方向の探索
-  public void GetChainCellUp(PuzzleLevel level, PuzzleCell baseCell, Action<PuzzleCell> addCallback)
-  {
-    GetChainCellVertical(level, baseCell, 1, addCallback);
-  }
-  // 下方向の探索
-  public void GetChainCellDown(PuzzleLevel level, PuzzleCell baseCell, Action<PuzzleCell> addCallback)
-  {
-    GetChainCellVertical(level, baseCell, -1, addCallback);
-  }
-
-  // 水平方向の探索
-  public void GetChainCellHorizontal(PuzzleLevel level, PuzzleCell baseCell, int direction, Action<PuzzleCell> addCallback)
-  {
-    if (direction == 0) { return; }
-    var nextIndexX = baseCell.IndexX + direction;
-    if (0 <= nextIndexX && nextIndexX < level.CellHorizontalCount())
-    {
-      var nextCell = level.CellList.FirstOrDefault(_ => _.IndexX == nextIndexX && _.IndexY == baseCell.IndexY);
-      if (nextCell.CellType == baseCell.CellType)
-      {
-        if (_chainCellsCache.Any(_ => _.IndexX == nextCell.IndexX && _.IndexY == nextCell.IndexY)) { return; }
-        _chainCellsCache.Add(nextCell);
-        addCallback?.Invoke(nextCell);
-      }
-    }
-  }
-  // 垂直方向の探索
-  public void GetChainCellVertical(PuzzleLevel level, PuzzleCell baseCell, int direction, Action<PuzzleCell> addCallback)
-  {
-    if (direction == 0) { return; }
-    var nextIndexY = baseCell.IndexY + direction;
-    if (0 <= nextIndexY && nextIndexY < level.CellVerticalCount())
-    {
-      var nextCell = level.CellList.FirstOrDefault(_ => _.IndexX == baseCell.IndexX && _.IndexY == nextIndexY);
-      if (nextCell.CellType == baseCell.CellType)
-      {
-        if (_chainCellsCache.Any(_ => _.IndexX == nextCell.IndexX && _.IndexY == nextCell.IndexY)) { return; }
-        _chainCellsCache.Add(nextCell);
-        addCallback?.Invoke(nextCell);
-      }
-    }
-  }
-
 }
