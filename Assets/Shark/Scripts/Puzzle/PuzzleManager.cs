@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -26,6 +27,17 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   int _currentLevel = 0;
   int _playCount = 0;
   PuzzleLevel _currentPuzzleLevel = null;
+
+  public enum StateEnum
+  {
+    Idle = 0,
+    PlayAnimation,
+  }
+  StateEnum _state = StateEnum.Idle;
+  void ChangeState(StateEnum state)
+  {
+    _state = state;
+  }
 
   private void Awake()
   {
@@ -115,8 +127,21 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   {
     Debug.Log($"[PuzzleManager] OnClickCell[{level.LevelMasterData.CellCount}, {cell.CellType}]");
 
-    var chainCells = level.GetChainCells(cell);
-    if (chainCells.Count < 2)
+    if (_state != StateEnum.Idle) { return; }
+    if (cell.CellType == PuzzleLevelMaster.CellTypeEnum.VOID) { return; }
+
+    ChangeState(StateEnum.PlayAnimation);
+
+    var task = PlayCell(level, cell);
+    task.ContinueWith(() => {
+      ChangeState(StateEnum.Idle);
+    });
+  }
+
+  public async UniTask PlayCell(PuzzleLevel level, PuzzleCell cell)
+  {
+    var toVoidSuccess = await level.ToVoid(cell);
+    if (toVoidSuccess == false)
     {
       // TODO : 消せないよということを表す何らかの表現を入れる
       return;
@@ -126,17 +151,11 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
 
     // TODO : 消す演出や消した後に上のやつを下に落とす演出を入れる
 
-    // 消す
-    foreach (var c in chainCells)
-    {
-      c.UpdateCellType(PuzzleLevelMaster.CellTypeEnum.VOID);
-    }
-
     // 盤面整理
-    level.LevelRemap();
+    await level.LevelRemap();
 
     var state = GameState(level);
-    switch(state)
+    switch (state)
     {
       case GameStateEnum.GameClear: ToGameClear(); break;
       case GameStateEnum.GameOver: ToGameOver(); break;

@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 6822021638483532849}
   - component: {fileID: 4692360940307529917}
   - component: {fileID: 5754981202152834613}
+  - component: {fileID: 7333382798869680663}
   m_Layer: 0
   m_Name: PuzzleCellSprite
   m_TagString: Untagged
@@ -156,8 +157,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cellType: 0
+  spriteRenderer: {fileID: 5689520027773196364}
+  boxCollider: {fileID: 2927154209810568361}
   eventTriggerHandler: {fileID: 5754981202152834613}
+  animator: {fileID: 7333382798869680663}
   onClick:
+    m_PersistentCalls:
+      m_Calls: []
+  onFinishOnActive:
+    m_PersistentCalls:
+      m_Calls: []
+  onFinishToVoid:
     m_PersistentCalls:
       m_Calls: []
 --- !u!114 &5754981202152834613
@@ -175,3 +185,23 @@ MonoBehaviour:
   onPointerClickEvent:
     m_PersistentCalls:
       m_Calls: []
+--- !u!95 &7333382798869680663
+Animator:
+  serializedVersion: 4
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5689520027773196366}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 0c75ba3d03e3544879b9cf362ee3a70f, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorControllerStateOnDisable: 0
