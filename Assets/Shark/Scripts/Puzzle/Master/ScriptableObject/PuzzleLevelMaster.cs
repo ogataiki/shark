@@ -64,7 +64,7 @@ public class PuzzleLevelMaster : ScriptableObject
   public CellCountEnum CellCount;
   public enum CellCountEnum
   {
-    PLAIN = 0, EASY63, NORMAL99,
+    PLAIN = 0, EASY63, LIGHT80, NORMAL99, HARD120,
   }
   public int GetCellCountNum()
   {
@@ -72,7 +72,9 @@ public class PuzzleLevelMaster : ScriptableObject
     {
       case CellCountEnum.PLAIN: return 7 * 9;
       case CellCountEnum.EASY63: return 7 * 9;
+      case CellCountEnum.LIGHT80: return 8 * 10;
       case CellCountEnum.NORMAL99: return 9 * 11;
+      case CellCountEnum.HARD120: return 10 * 12;
       default: return 7 * 9;
     }
   }

@@ -72,6 +72,10 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
     gameUI.SetActive(true);
     gameClearUI.SetActive(false);
     gameOverUI.SetActive(false);
+
+#if DEBUG
+    DebugGameStart();
+#endif
   }
 
   // 現在攻略中のレベルを展開
@@ -108,7 +112,7 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   public void DeployNextLevel()
   {
     _currentLevel += 1;
-    _currentLevel = Math.Min(puzzleLevelMasterList.Count, _currentLevel);
+    _currentLevel = Math.Min(puzzleLevelMasterList.Count-1, _currentLevel);
 
     if (_currentPuzzleLevel != null)
     {
@@ -220,4 +224,40 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
     _playCount = 0;
     playCountText.text = $"操作 {_playCount} 回";
   }
+
+
+#if DEBUG
+
+  // Debug UI
+  [SerializeField] GameObject debugUI;
+  [SerializeField] Button debugLevelReloadButton;
+  [SerializeField] Button debugClearButton;
+  [SerializeField] Button debugLevelResetButton;
+
+  public void DebugGameStart()
+  {
+    debugUI.SetActive(true);
+    debugClearButton.onClick.AddListener(DeployNextLevel);
+    debugLevelReloadButton.onClick.AddListener(() => {
+      if (_currentPuzzleLevel != null)
+      {
+        Destroy(_currentPuzzleLevel.gameObject);
+        _currentPuzzleLevel = null;
+      }
+      DeployCurrentLevel();
+    });
+    debugLevelResetButton.onClick.AddListener(() => {
+      _currentLevel = 1;
+      if (_currentPuzzleLevel != null)
+      {
+        Destroy(_currentPuzzleLevel.gameObject);
+        _currentPuzzleLevel = null;
+      }
+      DeployCurrentLevel();
+    });
+  }
+
+#endif
+
+
 }

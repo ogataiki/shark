@@ -14,8 +14,6 @@ public class PuzzleLevel : MonoBehaviour
   [SerializeField] float cellOffset;
   [SerializeField] int cellHorizontalCount;
   [SerializeField] int cellVerticalCount;
-  [SerializeField] List<float> cellPositionXList; // 左から右
-  [SerializeField] List<float> cellPositionYList; // 下から上
   [SerializeField] float cellScale = 1f;
 
   List<PuzzleCell> _cellList = new List<PuzzleCell>();
@@ -42,13 +40,24 @@ public class PuzzleLevel : MonoBehaviour
     var randomCellTypes = _levelMasterData.CreateRandomCellTypes();
     for (var y = 0; y < CellVerticalCount; y++)
     {
+      var positionY = (((CellVerticalCount / 2) - CellVerticalCount) + y + (CellVerticalCount % 2)) * cellOffset;
+      if ((CellVerticalCount % 2) == 0)
+      {
+        positionY += (cellOffset * 0.5f);
+      }
       for (var x = 0; x < CellHorizontalCount; x++)
       {
+        var positionX = (((CellHorizontalCount / 2) - CellHorizontalCount) + x + (CellHorizontalCount % 2)) * cellOffset;
+        if ((CellHorizontalCount % 2) == 0)
+        {
+          positionX += (cellOffset * 0.5f);
+        }
+
         var cellType = randomCellTypes[((1 * y) * CellHorizontalCount) + x];
         var cell = Instantiate(cellPrefab, cellParent);
         cell.gameObject.SetActive(true);
         cell.Init(cellType, x, y, cellScale);
-        cell.transform.localPosition = new Vector3(cellPositionXList[x], cellPositionYList[y], 0f);
+        cell.transform.localPosition = new Vector3(positionX, positionY, 0f);
         cell.onClick.RemoveAllListeners();
         cell.onClick.AddListener(OnClickCell);
         _cellList.Add(cell);
