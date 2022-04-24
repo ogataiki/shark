@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -39,29 +40,43 @@ public class PuzzleCellSprite : MonoBehaviour
     boxCollider.enabled = false;
     if (active)
     {
-      PlayOnActive();
+      PlayOnActive().Forget();
     }
   }
 
   public void OnClick()
   {
+    if (_state != StateEnum.Idle) { return; }
     onClick?.Invoke(this);
   }
 
-  public void PlayToVoid()
+  public async UniTask PlayToVoid()
   {
     ChangeState(StateEnum.PlayAnimation);
     animator.Play("ToVoid");
     Debug.Log($"[PuzzleCellSprite] PlayAnimation ToVoid");
+    await UniTask.DelayFrame(1); // ステートの反映に1フレームいるかも？
+    var nameHash = animator.GetCurrentAnimatorStateInfo(0).fullPathHash;
+    await UniTask.WaitWhile(() => {
+      var currentAnimatorState = animator.GetCurrentAnimatorStateInfo(0);
+      return currentAnimatorState.fullPathHash == nameHash && (currentAnimatorState.normalizedTime < 1);
+    });
+    OnFinishToVoid();
   }
-  public void PlayOnActive()
+  public async UniTask PlayOnActive()
   {
     ChangeState(StateEnum.PlayAnimation);
     animator.Play("OnActive");
     Debug.Log($"[PuzzleCellSprite] PlayAnimation OnActive");
+    await UniTask.DelayFrame(1); // ステートの反映に1フレームいるかも？
+    var nameHash = animator.GetCurrentAnimatorStateInfo(0).fullPathHash;
+    await UniTask.WaitWhile(() => {
+      var currentAnimatorState = animator.GetCurrentAnimatorStateInfo(0);
+      return currentAnimatorState.fullPathHash == nameHash && (currentAnimatorState.normalizedTime < 1);
+    });
+    OnFinishOnActinve();
   }
 
-  // アニメーションイベント
   public void OnFinishOnActinve()
   {
     ChangeState(StateEnum.Idle);

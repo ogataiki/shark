@@ -58,12 +58,6 @@ MonoBehaviour:
   onClick:
     m_PersistentCalls:
       m_Calls: []
-  onFinishOnActive:
-    m_PersistentCalls:
-      m_Calls: []
-  onFinishToVoid:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!1001 &756200447863852945
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -445,6 +439,18 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5689520027773196364, guid: d0042791289a34537bbcb351a8244017, type: 3}
       propertyPath: m_Color.a
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5689520027773196364, guid: d0042791289a34537bbcb351a8244017, type: 3}
+      propertyPath: m_Color.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5689520027773196364, guid: d0042791289a34537bbcb351a8244017, type: 3}
+      propertyPath: m_Color.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5689520027773196364, guid: d0042791289a34537bbcb351a8244017, type: 3}
+      propertyPath: m_Color.r
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5689520027773196365, guid: d0042791289a34537bbcb351a8244017, type: 3}

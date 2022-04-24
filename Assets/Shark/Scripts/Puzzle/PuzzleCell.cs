@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -9,7 +10,19 @@ public class PuzzleCell : MonoBehaviour
   [SerializeField] List<PuzzleCellSprite> sprites;
 
   PuzzleLevelMaster.CellTypeEnum _cellType;
+  PuzzleLevelMaster.CellTypeEnum _nextCellType = PuzzleLevelMaster.CellTypeEnum.VOID;
   public PuzzleLevelMaster.CellTypeEnum CellType { get { return _cellType; } }
+  public PuzzleLevelMaster.CellTypeEnum CellTypeWaitUpdate
+  {
+    get
+    {
+      if (_state == StateEnum.WaitUpdateCellType)
+      {
+        return _nextCellType;
+      }
+      return _cellType;
+    }
+  }
   int _indexX = 0;
   public int IndexX { get { return _indexX; } }
   int _indexY = 0;
@@ -17,12 +30,11 @@ public class PuzzleCell : MonoBehaviour
   float _spriteScale = 1f;
 
   public UnityEvent<PuzzleCell> onClick;
-  public UnityEvent<PuzzleCell> onFinishOnActive;
-  public UnityEvent<PuzzleCell> onFinishToVoid;
 
   public enum StateEnum
   {
     Idle = 0,
+    WaitUpdateCellType,
     PlayAnimation,
   }
   StateEnum _state = StateEnum.Idle;
@@ -41,10 +53,14 @@ public class PuzzleCell : MonoBehaviour
     {
       s.onClick.RemoveAllListeners();
       s.onClick.AddListener(OnClick);
-      s.onFinishOnActive.RemoveAllListeners();
-      s.onFinishOnActive.AddListener(OnFinishOnActinve);
-      s.onFinishToVoid.RemoveAllListeners();
-      s.onFinishToVoid.AddListener(OnFinishToVoid);
+    }
+  }
+
+  private void Update()
+  {
+    if (_state != StateEnum.Idle)
+    {
+      //Debug.Log($"[PuzzleCell {IndexX},{IndexY}] state[{_state}] cellType[{_cellType}] nextCellType[{_nextCellType}]");
     }
   }
 
@@ -61,27 +77,61 @@ public class PuzzleCell : MonoBehaviour
       s.transform.localScale = new Vector3(_spriteScale, _spriteScale, _spriteScale);
     }
   }
-  public void UpdateCellType(PuzzleLevelMaster.CellTypeEnum cellType)
+
+  public void PreUpdateCellType(PuzzleLevelMaster.CellTypeEnum nextCellType)
+  {
+    _nextCellType = nextCellType;
+    ChangeState(StateEnum.WaitUpdateCellType);
+  }
+  public void FireUpdateCellType()
+  {
+    if (_state != StateEnum.WaitUpdateCellType) { return; }
+    UpdateCellType(_nextCellType);
+  }
+
+  void UpdateCellType(PuzzleLevelMaster.CellTypeEnum cellType)
   {
     var beforCellType = _cellType;
     _cellType = cellType;
 
+    if (beforCellType == _cellType)
+    {
+      ChangeState(StateEnum.Idle);
+      return;
+    }
+
+    ChangeState(StateEnum.PlayAnimation);
+
+    var beforSprite = GetCellSprite(beforCellType);
+    beforSprite.PlayToVoid().Forget();
+
+    var currentSprite = GetCellSprite(_cellType);
     if (_cellType == PuzzleLevelMaster.CellTypeEnum.VOID)
     {
-      if (beforCellType != _cellType)
-      {
-        PlayCellAnimToVoid(beforCellType);
-      }
+      currentSprite.onFinishToVoid.RemoveAllListeners();
+      currentSprite.onFinishToVoid.AddListener(UpdateCellTypeFinish);
+      currentSprite.PlayToVoid().Forget();
     }
     else
     {
-      PlayCellAnimOnActive(beforCellType);
+      currentSprite.onFinishOnActive.RemoveAllListeners();
+      currentSprite.onFinishOnActive.AddListener(UpdateCellTypeFinish);
+      currentSprite.PlayOnActive().Forget();
     }
   }
-  public PuzzleCellSprite CurrentCellSprite()
+  public void UpdateCellTypeFinish(PuzzleCellSprite sprite)
   {
-    if ((int)_cellType >= sprites.Count) { return null; }
-    return sprites[(int)_cellType];
+    sprite.onFinishToVoid.RemoveAllListeners();
+    sprite.onFinishOnActive.RemoveAllListeners();
+
+    // spriteのアニメーション終了でこちらのアニメーションも終了扱い
+    ChangeState(StateEnum.Idle);
+  }
+
+  public PuzzleCellSprite GetCellSprite(PuzzleLevelMaster.CellTypeEnum cellType)
+  {
+    if ((int)cellType >= sprites.Count) { return null; }
+    return sprites[(int)cellType];
   }
 
   public void OnClick(PuzzleCellSprite cellSprite)
@@ -92,32 +142,4 @@ public class PuzzleCell : MonoBehaviour
     Debug.Log($"[PuzzleCell] OnClick[{cellSprite.CellType}]");
     onClick?.Invoke(this);
   }
-
-  public void PlayCellAnimToVoid(PuzzleLevelMaster.CellTypeEnum beforType)
-  {
-    ChangeState(StateEnum.PlayAnimation);
-    var beforSprite = sprites[(int)beforType];
-    beforSprite.PlayToVoid();
-  }
-  public void PlayCellAnimOnActive(PuzzleLevelMaster.CellTypeEnum beforType)
-  {
-    ChangeState(StateEnum.PlayAnimation);
-    var beforSprite = sprites[(int)beforType];
-    beforSprite.PlayToVoid();
-    var currentSprite = CurrentCellSprite();
-    currentSprite.PlayOnActive();
-  }
-
-  // spriteのアニメーション終了でこちらのアニメーションも終了扱い
-  public void OnFinishOnActinve(PuzzleCellSprite cell)
-  {
-    ChangeState(StateEnum.Idle);
-    onFinishOnActive?.Invoke(this);
-  }
-  public void OnFinishToVoid(PuzzleCellSprite cell)
-  {
-    ChangeState(StateEnum.Idle);
-    onFinishToVoid?.Invoke(this);
-  }
-
 }

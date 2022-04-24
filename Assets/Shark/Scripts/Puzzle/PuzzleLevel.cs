@@ -77,51 +77,82 @@ public class PuzzleLevel : MonoBehaviour
     var tasks = new List<UniTask>();
     foreach (var cell in chainCells)
     {
-      tasks.Add(ToVoidCell(cell));
+      var task = ToVoidCell(cell);
+      tasks.Add(task);
     }
     await UniTask.WhenAll(tasks);
 
     return true;
   }
-  public async UniTask ToVoidCell(PuzzleCell cell)
+  public UniTask ToVoidCell(PuzzleCell cell)
   {
-    cell.UpdateCellType(PuzzleLevelMaster.CellTypeEnum.VOID);
-    await UniTask.WaitUntil(() => cell.IsIdle());
+    cell.PreUpdateCellType(PuzzleLevelMaster.CellTypeEnum.VOID);
+    cell.FireUpdateCellType();
+    return UniTask.WaitUntil(() => cell.IsIdle());
   }
 
   // 消えた後に再配置する
   public async UniTask LevelRemap()
   {
     // 縦軸を左から順に再配置
-    var allVoidCount = 0;
+    var verticalTasks = new List<UniTask>();
     for (var x = 0; x < CellHorizontalCount; x++)
     {
-      var verticalCells = CellList.Where(_ => _.IndexX == x).OrderBy(_ => _.IndexY).ToList();
-      for (var y = 0; y < CellVerticalCount; y++)
-      {
-        var cell = verticalCells[y];
-        if (cell.CellType != PuzzleLevelMaster.CellTypeEnum.VOID) { continue; }
+      var verticalTask = LevelRemapVertical(x);
+      verticalTasks.AddRange(verticalTask);
+    }
+    await UniTask.WhenAll(verticalTasks);
 
-        // 入れ替え対象を抽出
-        for (var replaceY = y + 1; replaceY < verticalCells.Count; replaceY++)
+    // 全てVOIDの縦軸があれば左に寄せる処理
+    var verticalAllVoidTasks = LevelRemapVerticalAllVoid();
+    await UniTask.WhenAll(verticalAllVoidTasks);
+  }
+
+  // 縦一列の再配置
+  List<UniTask> LevelRemapVertical(int x)
+  {
+    var updateCells = new List<PuzzleCell>();
+
+    var verticalCells = CellList.Where(_ => _.IndexX == x).OrderBy(_ => _.IndexY).ToList();
+    for (var y = 0; y < CellVerticalCount; y++)
+    {
+      var cell = verticalCells[y];
+      if (cell.CellTypeWaitUpdate != PuzzleLevelMaster.CellTypeEnum.VOID) { continue; }
+
+      // 入れ替え対象を抽出
+      for (var replaceY = y + 1; replaceY < verticalCells.Count; replaceY++)
+      {
+        var replacementCell = verticalCells[replaceY];
+        if (replacementCell.CellTypeWaitUpdate != PuzzleLevelMaster.CellTypeEnum.VOID)
         {
-          var replacementCell = verticalCells[replaceY];
-          if (replacementCell.CellType != PuzzleLevelMaster.CellTypeEnum.VOID)
-          {
-            cell.UpdateCellType(replacementCell.CellType);
-            replacementCell.UpdateCellType(PuzzleLevelMaster.CellTypeEnum.VOID);
-            await UniTask.WaitUntil(() => cell.IsIdle() && replacementCell.IsIdle());
-            break;
-          }
+          cell.PreUpdateCellType(replacementCell.CellTypeWaitUpdate);
+          replacementCell.PreUpdateCellType(PuzzleLevelMaster.CellTypeEnum.VOID);
+          updateCells.Add(cell);
+          updateCells.Add(replacementCell);
+          break;
         }
       }
     }
 
-    // 全部VOIDセルの縦軸があったら間引く(一個右の縦軸の内容で置き換えていく)
+    var tasks = new List<UniTask>();
+    foreach (var updateCell in updateCells)
+    {
+      updateCell.FireUpdateCellType();
+      var task = UniTask.WaitUntil(() => updateCell.IsIdle());
+      tasks.Add(task);
+    }
+    return tasks;
+  }
+
+  // 全てVOIDの縦軸があれば左に寄せる処理
+  List<UniTask> LevelRemapVerticalAllVoid()
+  {
+    var updateCells = new List<PuzzleCell>();
+    var allVoidCount = 0;
     for (var x = 0; x + allVoidCount < CellHorizontalCount;)
     {
       var verticalCells = CellList.Where(_ => _.IndexX == x).OrderBy(_ => _.IndexY).ToList();
-      if (verticalCells.Count(_ => _.CellType == PuzzleLevelMaster.CellTypeEnum.VOID) >= CellVerticalCount)
+      if (verticalCells.Count(_ => _.CellTypeWaitUpdate == PuzzleLevelMaster.CellTypeEnum.VOID) >= CellVerticalCount)
       {
         for (var overwrittenX = x; overwrittenX + 1 < CellHorizontalCount; overwrittenX++)
         {
@@ -132,9 +163,10 @@ public class PuzzleLevel : MonoBehaviour
           {
             var overwrittenCell = overwrittenVerticalCells[y];
             var replacementCell = replacementVerticalCells[y];
-            overwrittenCell.UpdateCellType(replacementCell.CellType);
-            replacementCell.UpdateCellType(PuzzleLevelMaster.CellTypeEnum.VOID);
-            await UniTask.WaitUntil(() => overwrittenCell.IsIdle() && replacementCell.IsIdle());
+            overwrittenCell.PreUpdateCellType(replacementCell.CellTypeWaitUpdate);
+            replacementCell.PreUpdateCellType(PuzzleLevelMaster.CellTypeEnum.VOID);
+            updateCells.Add(overwrittenCell);
+            updateCells.Add(replacementCell);
           }
         }
         allVoidCount += 1;
@@ -144,6 +176,15 @@ public class PuzzleLevel : MonoBehaviour
         x += 1;
       }
     }
+
+    var tasks = new List<UniTask>();
+    foreach (var updateCell in updateCells)
+    {
+      updateCell.FireUpdateCellType();
+      var task = UniTask.WaitUntil(() => updateCell.IsIdle());
+      tasks.Add(task);
+    }
+    return tasks;
   }
 
   //=====================
