@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
@@ -10,31 +11,20 @@ public class PuzzleCell : MonoBehaviour
   [SerializeField] List<PuzzleCellSprite> sprites;
 
   PuzzleLevelMaster.CellTypeEnum _cellType;
-  PuzzleLevelMaster.CellTypeEnum _nextCellType = PuzzleLevelMaster.CellTypeEnum.VOID;
   public PuzzleLevelMaster.CellTypeEnum CellType { get { return _cellType; } }
-  public PuzzleLevelMaster.CellTypeEnum CellTypeWaitUpdate
-  {
-    get
-    {
-      if (_state == StateEnum.WaitUpdateCellType)
-      {
-        return _nextCellType;
-      }
-      return _cellType;
-    }
-  }
-  int _indexX = 0;
-  public int IndexX { get { return _indexX; } }
-  int _indexY = 0;
-  public int IndexY { get { return _indexY; } }
+
   float _spriteScale = 1f;
+
+  PuzzleSlot _slot;
+  public PuzzleSlot Slot { get { return _slot; } }
+
+  string _cellHash;
 
   public UnityEvent<PuzzleCell> onClick;
 
   public enum StateEnum
   {
     Idle = 0,
-    WaitUpdateCellType,
     PlayAnimation,
   }
   StateEnum _state = StateEnum.Idle;
@@ -56,18 +46,9 @@ public class PuzzleCell : MonoBehaviour
     }
   }
 
-  private void Update()
+  public void Init(PuzzleLevelMaster.CellTypeEnum cellType, float scale, PuzzleSlot slot)
   {
-    if (_state != StateEnum.Idle)
-    {
-      //Debug.Log($"[PuzzleCell {IndexX},{IndexY}] state[{_state}] cellType[{_cellType}] nextCellType[{_nextCellType}]");
-    }
-  }
-
-  public void Init(PuzzleLevelMaster.CellTypeEnum cellType, int indexX, int indexY, float scale)
-  {
-    _indexX = indexX;
-    _indexY = indexY;
+    _slot = slot;
     _cellType = cellType;
     _spriteScale = scale;
     foreach (var s in sprites)
@@ -78,60 +59,10 @@ public class PuzzleCell : MonoBehaviour
     }
   }
 
-  public void PreUpdateCellType(PuzzleLevelMaster.CellTypeEnum nextCellType)
+  public PuzzleCellSprite GetCellSprite()
   {
-    _nextCellType = nextCellType;
-    ChangeState(StateEnum.WaitUpdateCellType);
-  }
-  public void FireUpdateCellType()
-  {
-    if (_state != StateEnum.WaitUpdateCellType) { return; }
-    UpdateCellType(_nextCellType);
-  }
-
-  void UpdateCellType(PuzzleLevelMaster.CellTypeEnum cellType)
-  {
-    var beforCellType = _cellType;
-    _cellType = cellType;
-
-    if (beforCellType == _cellType)
-    {
-      ChangeState(StateEnum.Idle);
-      return;
-    }
-
-    ChangeState(StateEnum.PlayAnimation);
-
-    var beforSprite = GetCellSprite(beforCellType);
-    beforSprite.PlayToVoid().Forget();
-
-    var currentSprite = GetCellSprite(_cellType);
-    if (_cellType == PuzzleLevelMaster.CellTypeEnum.VOID)
-    {
-      currentSprite.onFinishToVoid.RemoveAllListeners();
-      currentSprite.onFinishToVoid.AddListener(UpdateCellTypeFinish);
-      currentSprite.PlayToVoid().Forget();
-    }
-    else
-    {
-      currentSprite.onFinishOnActive.RemoveAllListeners();
-      currentSprite.onFinishOnActive.AddListener(UpdateCellTypeFinish);
-      currentSprite.PlayOnActive().Forget();
-    }
-  }
-  public void UpdateCellTypeFinish(PuzzleCellSprite sprite)
-  {
-    sprite.onFinishToVoid.RemoveAllListeners();
-    sprite.onFinishOnActive.RemoveAllListeners();
-
-    // spriteのアニメーション終了でこちらのアニメーションも終了扱い
-    ChangeState(StateEnum.Idle);
-  }
-
-  public PuzzleCellSprite GetCellSprite(PuzzleLevelMaster.CellTypeEnum cellType)
-  {
-    if ((int)cellType >= sprites.Count) { return null; }
-    return sprites[(int)cellType];
+    if ((int)_cellType >= sprites.Count) { return null; }
+    return sprites[(int)_cellType];
   }
 
   public void OnClick(PuzzleCellSprite cellSprite)
@@ -141,5 +72,16 @@ public class PuzzleCell : MonoBehaviour
 
     Debug.Log($"[PuzzleCell] OnClick[{cellSprite.CellType}]");
     onClick?.Invoke(this);
+  }
+
+  public async UniTask ToVoid()
+  {
+    var currentSprite = GetCellSprite();
+    if (currentSprite == null) { return; }
+    ChangeState(StateEnum.PlayAnimation);
+    _cellType = PuzzleLevelMaster.CellTypeEnum.VOID;
+    await currentSprite.PlayToVoid();
+    await UniTask.WaitUntil(() => currentSprite.IsIdle());
+    ChangeState(StateEnum.Idle);
   }
 }

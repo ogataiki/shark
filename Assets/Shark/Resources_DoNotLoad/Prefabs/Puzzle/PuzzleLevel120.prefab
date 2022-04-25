@@ -94,7 +94,7 @@ GameObject:
   m_Component:
   - component: {fileID: 9144238523762046504}
   m_Layer: 0
-  m_Name: CellParent
+  m_Name: SlotParent
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -162,13 +162,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dff16a403579f40bd9907e4e4cc71272, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cellParent: {fileID: 9144238523762046504}
+  slotParent: {fileID: 9144238523762046504}
+  slotPrefab: {fileID: 3670405694605938425, guid: 70cf295af67684109b1b07438ef1db16, type: 3}
   cellPrefab: {fileID: 4020689622522304491, guid: 435f9b42b7f13481992444cf01451b19, type: 3}
+  slotOffset: 0.415
+  slotHorizontalCount: 10
+  slotVerticalCount: 12
+  cellParent: {fileID: 9144238523762046504}
   cellOffset: 0.415
   cellHorizontalCount: 10
   cellVerticalCount: 12
   cellScale: 0.395
-  onCellClick:
+  onClickSlot:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1001 &6790153314252539024

@@ -24,6 +24,10 @@ public class PuzzleCellSprite : MonoBehaviour
     PlayAnimation,
   }
   StateEnum _state = StateEnum.Idle;
+  public bool IsIdle()
+  {
+    return _state == StateEnum.Idle;
+  }
   void ChangeState(StateEnum state)
   {
     _state = state;

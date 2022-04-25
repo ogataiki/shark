@@ -106,8 +106,8 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
 
     _currentPuzzleLevel = Instantiate(groundPrefab, this.transform);
     _currentPuzzleLevel.Init(puzzleLevelMasterList[_currentLevel]);
-    _currentPuzzleLevel.onCellClick.RemoveAllListeners();
-    _currentPuzzleLevel.onCellClick.AddListener(OnClickCell);
+    _currentPuzzleLevel.onClickSlot.RemoveAllListeners();
+    _currentPuzzleLevel.onClickSlot.AddListener(OnClickSlot);
   }
   public void DeployNextLevel()
   {
@@ -127,24 +127,24 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
     _currentPuzzleLevel.Init(puzzleLevelMasterList[_currentLevel]);
   }
 
-  public void OnClickCell(PuzzleLevel level, PuzzleCell cell)
+  public void OnClickSlot(PuzzleLevel level, PuzzleSlot slot)
   {
-    Debug.Log($"[PuzzleManager] OnClickCell[{level.LevelMasterData.CellCount}, {cell.CellType}]");
+    Debug.Log($"[PuzzleManager] OnClickSlot[{level.LevelMasterData.CellCount}, {slot.CellType}]");
 
     if (_state != StateEnum.Idle) { return; }
-    if (cell.CellType == PuzzleLevelMaster.CellTypeEnum.VOID) { return; }
+    if (slot.CellType == PuzzleLevelMaster.CellTypeEnum.VOID) { return; }
 
     ChangeState(StateEnum.PlayAnimation);
 
-    var task = PlayCell(level, cell);
+    var task = PlayCell(level, slot);
     task.ContinueWith(() => {
       ChangeState(StateEnum.Idle);
     });
   }
 
-  public async UniTask PlayCell(PuzzleLevel level, PuzzleCell cell)
+  public async UniTask PlayCell(PuzzleLevel level, PuzzleSlot slot)
   {
-    var toVoidSuccess = await level.ToVoid(cell);
+    var toVoidSuccess = await level.ToVoid(slot);
     if (toVoidSuccess == false)
     {
       // TODO : 消せないよということを表す何らかの表現を入れる
@@ -173,31 +173,31 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   }
   public GameStateEnum GameState(PuzzleLevel level)
   {
-    var cells = level.CellList;
+    var slots = level.SlotList;
     var voidAll = true;
-    foreach(var cell in cells)
+    foreach(var slot in slots)
     {
-      if (cell.CellType == PuzzleLevelMaster.CellTypeEnum.VOID) { continue; }
+      if (slot.CellType == PuzzleLevelMaster.CellTypeEnum.VOID) { continue; }
 
       voidAll = false;
 
       // 一つでも連結セルが見つかったらゲーム有効
 
-      var lIndexX = cell.IndexX - 1;
-      PuzzleCell lCell = (lIndexX < 0) ? null : cells.First(_ => _.IndexX == lIndexX && _.IndexY == cell.IndexY);
-      if (lCell != null && lCell.CellType == cell.CellType) { return GameStateEnum.Idle; }
+      var lIndexX = slot.IndexX - 1;
+      PuzzleSlot lSlot = (lIndexX < 0) ? null : slots.First(_ => _.IndexX == lIndexX && _.IndexY == slot.IndexY);
+      if (lSlot != null && lSlot.CellType == slot.CellType) { return GameStateEnum.Idle; }
 
-      var rIndexX = cell.IndexX + 1;
-      PuzzleCell rCell = (rIndexX >= level.CellHorizontalCount) ? null : cells.First(_ => _.IndexX == rIndexX && _.IndexY == cell.IndexY);
-      if (rCell != null && rCell.CellType == cell.CellType) { return GameStateEnum.Idle; }
+      var rIndexX = slot.IndexX + 1;
+      PuzzleSlot rSlot = (rIndexX >= level.SlotHorizontalCount) ? null : slots.First(_ => _.IndexX == rIndexX && _.IndexY == slot.IndexY);
+      if (rSlot != null && rSlot.CellType == slot.CellType) { return GameStateEnum.Idle; }
 
-      var uIndexY = cell.IndexY - 1;
-      PuzzleCell uCell = (uIndexY < 0) ? null : cells.First(_ => _.IndexX == cell.IndexX && _.IndexY == uIndexY);
-      if (uCell != null && uCell.CellType == cell.CellType) { return GameStateEnum.Idle; }
+      var uIndexY = slot.IndexY - 1;
+      PuzzleSlot uSlot = (uIndexY < 0) ? null : slots.First(_ => _.IndexX == slot.IndexX && _.IndexY == uIndexY);
+      if (uSlot != null && uSlot.CellType == slot.CellType) { return GameStateEnum.Idle; }
 
-      var tIndexY = cell.IndexY + 1;
-      PuzzleCell tCell = (tIndexY >= level.CellVerticalCount) ? null : cells.First(_ => _.IndexX == cell.IndexX && _.IndexY == tIndexY);
-      if (tCell != null && tCell.CellType == cell.CellType) { return GameStateEnum.Idle; }
+      var tIndexY = slot.IndexY + 1;
+      PuzzleSlot tSlot = (tIndexY >= level.SlotVerticalCount) ? null : slots.First(_ => _.IndexX == slot.IndexX && _.IndexY == tIndexY);
+      if (tSlot != null && tSlot.CellType == slot.CellType) { return GameStateEnum.Idle; }
     }
 
     // 全てVOIDセルならゲームクリア、連結セルが一つもないならゲームオーバー
