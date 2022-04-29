@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 008722ba6fb884f9aad865d9030f1f8a, type: 3}
   m_Name: PuzzleLevelMasterData_0
   m_EditorClassIdentifier: 
-  CellTypeList: 0100000002000000
-  CellCount: 1
+  CellTypeList: ffffffffffffffff
+  CellCount: 0
   Complexity: 1000

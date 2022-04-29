@@ -24,7 +24,7 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   [SerializeField] GameObject gameOverUI;
   [SerializeField] Button retryLevelButton;
 
-  int _currentLevel = 0;
+  int _currentLevel = 1;
   int _playCount = 0;
   PuzzleLevel _currentPuzzleLevel = null;
 
@@ -43,6 +43,11 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   {
     nextLevelButton.onClick.AddListener(OnClickNextLevelButton);
     retryLevelButton.onClick.AddListener(OnClickRetryLevelButton);
+
+    foreach(var master in puzzleLevelMasterList)
+    {
+      master.ClearCache();
+    }
   }
 
   private void Start()
@@ -81,6 +86,12 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   // 現在攻略中のレベルを展開
   public void DeployCurrentLevel()
   {
+    if (_currentPuzzleLevel != null)
+    {
+      Destroy(_currentPuzzleLevel.gameObject);
+      _currentPuzzleLevel = null;
+    }
+
     if (puzzleLevelMasterList.Count <= _currentLevel)
     {
       Debug.LogError($"レベル[{_currentLevel}]の puzzle level master が登録されていません。");
@@ -88,17 +99,18 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
     }
 
     var master = puzzleLevelMasterList[_currentLevel];
+    master.ClearCache();
 
-    if (puzzleLevelPrefabList.Count <= (int)master.CellCount)
+    if (puzzleLevelPrefabList.Count <= (int)master.GetCellCount())
     {
-      Debug.LogError($"マスタのCellCount[{master.CellCount}]の puzzle ground が登録されていません。");
+      Debug.LogError($"マスタのCellCount[{master.GetCellCount()}]の puzzle ground が登録されていません。");
       return;
     }
 
-    var groundPrefab = puzzleLevelPrefabList[(int)master.CellCount];
+    var groundPrefab = puzzleLevelPrefabList[(int)master.GetCellCount()];
     if (groundPrefab == null)
     {
-      Debug.LogError($"マスタのCellCount[{master.CellCount}]の puzzle ground が null です。");
+      Debug.LogError($"マスタのCellCount[{master.GetCellCount()}]の puzzle ground が null です。");
       return;
     }
 
@@ -114,22 +126,16 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
     _currentLevel += 1;
     _currentLevel = Math.Min(puzzleLevelMasterList.Count-1, _currentLevel);
 
-    if (_currentPuzzleLevel != null)
-    {
-      Destroy(_currentPuzzleLevel.gameObject);
-      _currentPuzzleLevel = null;
-    }
     DeployCurrentLevel();
   }
   public void ResetCurrentLevel()
   {
-    if (_currentPuzzleLevel == null) { return; }
-    _currentPuzzleLevel.Init(puzzleLevelMasterList[_currentLevel]);
+    DeployCurrentLevel();
   }
 
   public void OnClickSlot(PuzzleLevel level, PuzzleSlot slot)
   {
-    Debug.Log($"[PuzzleManager] OnClickSlot[{level.LevelMasterData.CellCount}, {slot.CellType}]");
+    Debug.Log($"[PuzzleManager] OnClickSlot[{level.LevelMasterData.GetCellCount()}, {slot.CellType}]");
 
     if (_state != StateEnum.Idle) { return; }
     if (slot.CellType == PuzzleLevelMaster.CellTypeEnum.VOID) { return; }
@@ -233,26 +239,24 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   [SerializeField] Button debugLevelReloadButton;
   [SerializeField] Button debugClearButton;
   [SerializeField] Button debugLevelResetButton;
+  [SerializeField] Button debugLevelZeroButton;
 
   public void DebugGameStart()
   {
     debugUI.SetActive(true);
+
+    debugClearButton.onClick.RemoveAllListeners();
     debugClearButton.onClick.AddListener(DeployNextLevel);
-    debugLevelReloadButton.onClick.AddListener(() => {
-      if (_currentPuzzleLevel != null)
-      {
-        Destroy(_currentPuzzleLevel.gameObject);
-        _currentPuzzleLevel = null;
-      }
-      DeployCurrentLevel();
-    });
+    debugLevelReloadButton.onClick.RemoveAllListeners();
+    debugLevelReloadButton.onClick.AddListener(DeployCurrentLevel);
+    debugLevelResetButton.onClick.RemoveAllListeners();
     debugLevelResetButton.onClick.AddListener(() => {
       _currentLevel = 1;
-      if (_currentPuzzleLevel != null)
-      {
-        Destroy(_currentPuzzleLevel.gameObject);
-        _currentPuzzleLevel = null;
-      }
+      DeployCurrentLevel();
+    });
+    debugLevelZeroButton.onClick.RemoveAllListeners();
+    debugLevelZeroButton.onClick.AddListener(() => {
+      _currentLevel = 0;
       DeployCurrentLevel();
     });
   }

@@ -12,23 +12,74 @@ public class PuzzleLevelMaster : ScriptableObject
   // 色数 最低2は必要 多いほど難しくなる
   // セルの種類
   [SerializeField]
-  public List<CellTypeEnum> CellTypeList = new List<CellTypeEnum>();
+  List<CellTypeEnum> CellTypeList = new List<CellTypeEnum>();
   public enum CellTypeEnum
   {
+    RANDOM = -1,
     VOID = 0,
     TEST_PLAIN, TEST_RED, TEST_GREEN, TEST_YELLOW,
   }
+  List<CellTypeEnum> CellTypeListCache = new List<CellTypeEnum>();
+  public List<CellTypeEnum> GetCellTypeList()
+  {
+    if (CellTypeList.Count <= 0)
+    {
+      Debug.LogError($"セル種別の設定が一つもありません");
+      return CellTypeListCache;
+    }
+    if (CellTypeListCache.Count <= 0)
+    {
+      CellTypeListCache = new List<CellTypeEnum>();
+      var randomCells = new List<CellTypeEnum>();
+      foreach (CellTypeEnum Value in Enum.GetValues(typeof(CellTypeEnum)))
+      {
+        if (Value == CellTypeEnum.RANDOM) { continue; }
+        if (Value == CellTypeEnum.VOID) { continue; }
+        randomCells.Add(Value);
+      }
+      var randomPool = new List<CellTypeEnum>(randomCells);
+      foreach (var type in CellTypeList)
+      {
+        if (type == CellTypeEnum.RANDOM)
+        {
+          if (randomPool.Count > 0)
+          {
+            var randomCell = randomPool[UnityEngine.Random.Range(0, randomPool.Count)];
+            randomPool.Remove(randomCell);
+            CellTypeListCache.Add(randomCell);
+          }
+          else
+          {
+            var randomCell = randomCells[UnityEngine.Random.Range(0, randomCells.Count)];
+            CellTypeListCache.Add(randomCell);
+          }
+        }
+        else
+        {
+          CellTypeListCache.Add(type);
+        }
+      }
+    }
+    return CellTypeListCache;
+  }
   public CellTypeEnum GetRandomCellType()
   {
-    return CellTypeList[UnityEngine.Random.Range(0, CellTypeList.Count)];
+    var cellTypeList = GetCellTypeList();
+    if (cellTypeList.Count <= 0)
+    {
+      Debug.LogError($"セル種別の設定が一つもありません");
+      return CellTypeEnum.VOID;
+    }
+    return cellTypeList[UnityEngine.Random.Range(0, cellTypeList.Count)];
   }
   public List<CellTypeEnum> CreateRandomCellTypes()
   {
+    var cellTypeList = GetCellTypeList();
     var totalCellNum = GetCellCountNum();
 
     // 最初に全色2個を保証する
     var requireCellTypes = new List<CellTypeEnum>();
-    foreach(var requireType in CellTypeList)
+    foreach(var requireType in cellTypeList)
     {
       requireCellTypes.Add(requireType);
       requireCellTypes.Add(requireType);
@@ -61,16 +112,37 @@ public class PuzzleLevelMaster : ScriptableObject
   // 横7,縦9の63セルが基本
   // もっと簡単なら少なく、もっと難しいなら多い物を用意する
   [SerializeField]
-  public CellCountEnum CellCount;
+  CellCountEnum CellCount;
   public enum CellCountEnum
   {
-    PLAIN = 0, EASY63, LIGHT80, NORMAL99, HARD120,
+    RANDOM = 0, EASY63, LIGHT80, NORMAL99, HARD120,
+  }
+  CellCountEnum CellCountCache = CellCountEnum.RANDOM;
+  public CellCountEnum GetCellCount()
+  {
+    if (CellCount != CellCountEnum.RANDOM)
+    {
+      CellCountCache = CellCount;
+      return CellCount;
+    }
+
+    if (CellCountCache == CellCountEnum.RANDOM)
+    {
+      var randomList = new List<CellCountEnum>();
+      foreach (CellCountEnum Value in Enum.GetValues(typeof(CellCountEnum)))
+      {
+        if (Value == CellCountEnum.RANDOM) { continue; }
+        randomList.Add(Value);
+      }
+      CellCountCache = randomList[UnityEngine.Random.Range(0, randomList.Count)];
+    }
+    return CellCountCache;
   }
   public int GetCellCountNum()
   {
-    switch(CellCount)
+    var cellCount = GetCellCount();
+    switch (cellCount)
     {
-      case CellCountEnum.PLAIN: return 7 * 9;
       case CellCountEnum.EASY63: return 7 * 9;
       case CellCountEnum.LIGHT80: return 8 * 10;
       case CellCountEnum.NORMAL99: return 9 * 11;
@@ -90,5 +162,13 @@ public class PuzzleLevelMaster : ScriptableObject
   {
     var seed = UnityEngine.Random.Range(COMPLEXITY_MIN, COMPLEXITY_MAX + 1);
     return (seed <= Complexity);
+  }
+
+
+
+  public void ClearCache()
+  {
+    CellTypeListCache.Clear();
+    CellCountCache = CellCountEnum.RANDOM;
   }
 }
