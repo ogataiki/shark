@@ -17,6 +17,8 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   [SerializeField] GameObject gameUI;
   [SerializeField] TextMeshProUGUI currentLevelText;
   [SerializeField] TextMeshProUGUI playCountText;
+  [SerializeField] TextMeshProUGUI totalScoreText;
+  [SerializeField] TextMeshProUGUI currentScoreText;
 
   [SerializeField] GameObject gameClearUI;
   [SerializeField] Button nextLevelButton;
@@ -24,7 +26,8 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   [SerializeField] GameObject gameOverUI;
   [SerializeField] Button retryLevelButton;
 
-  int _currentLevel = 1;
+  const int _startLevel = 1;
+  int _currentLevel = _startLevel;
   int _playCount = 0;
   PuzzleLevel _currentPuzzleLevel = null;
 
@@ -52,6 +55,9 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
 
   private void Start()
   {
+    // 保存されたスコアデータをロード
+    ScoreManager.Instance.Init();
+
     DeployCurrentLevel();
 
     GameStart();
@@ -67,6 +73,8 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
 
   public void OnClickRetryLevelButton()
   {
+    ScoreManager.Instance.ClearCurrentScoreCache();
+
     ResetCurrentLevel();
 
     GameStart();
@@ -120,16 +128,21 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
     _currentPuzzleLevel.Init(puzzleLevelMasterList[_currentLevel]);
     _currentPuzzleLevel.onClickSlot.RemoveAllListeners();
     _currentPuzzleLevel.onClickSlot.AddListener(OnClickSlot);
+
+    currentScoreText.text = $"スコア\n{ScoreManager.Instance.CurrentScoreCache.GetScore()}";
+    totalScoreText.text = $"最高スコア\n{ ScoreManager.Instance.TopScore.GetScore()}";
   }
   public void DeployNextLevel()
   {
     _currentLevel += 1;
     _currentLevel = Math.Min(puzzleLevelMasterList.Count-1, _currentLevel);
-
     DeployCurrentLevel();
   }
   public void ResetCurrentLevel()
   {
+    ScoreManager.Instance.ClearCurrentScoreCache();
+
+    _currentLevel = _startLevel;
     DeployCurrentLevel();
   }
 
@@ -150,16 +163,18 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
 
   public async UniTask PlayCell(PuzzleLevel level, PuzzleSlot slot)
   {
-    var toVoidSuccess = await level.ToVoid(slot);
-    if (toVoidSuccess == false)
+    var toVoidResult = await level.ToVoid(slot);
+    if (toVoidResult.success == false)
     {
       // TODO : 消せないよということを表す何らかの表現を入れる
       return;
     }
 
-    AddPlayCount();
-
-    // TODO : 消す演出や消した後に上のやつを下に落とす演出を入れる
+    // スコア登録
+    ScoreManager.Instance.CurrentScoreCache.EntryPlayData(_currentLevel, slot.CellType, toVoidResult.count);
+    currentScoreText.text = $"スコア\n{ScoreManager.Instance.CurrentScoreCache.GetScore()}";
+    _playCount = ScoreManager.Instance.CurrentScoreCache.GetPlayData(_currentLevel).count;
+    UpdatePlayCount();
 
     // 盤面整理
     await level.LevelRemap();
@@ -213,16 +228,35 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   public void ToGameClear()
   {
     gameClearUI.SetActive(true);
+    UpdateTotalScore();
   }
 
   public void ToGameOver()
   {
     gameOverUI.SetActive(true);
+    UpdateTotalScore();
+  }
+
+  public void UpdateTotalScore()
+  {
+    var currentScore = ScoreManager.Instance.CurrentScoreCache;
+    if (currentScore.GetScore() > ScoreManager.Instance.TopScore.GetScore())
+    {
+      ScoreManager.Instance.SetTopScore(currentScore);
+      ScoreManager.Instance.AddScoreRanking(currentScore);
+      ScoreManager.Instance.SaveTopScore();
+      ScoreManager.Instance.SaveScoreRanking();
+      totalScoreText.text = $"最高スコア\n{ ScoreManager.Instance.TopScore.GetScore()}";
+    }
   }
 
   public void AddPlayCount()
   {
     _playCount += 1;
+    playCountText.text = $"操作 {_playCount} 回";
+  }
+  public void UpdatePlayCount()
+  {
     playCountText.text = $"操作 {_playCount} 回";
   }
   public void ResetPlayCount()

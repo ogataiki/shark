@@ -91,12 +91,12 @@ public class PuzzleLevel : MonoBehaviour
     _slotList.Clear();
   }
 
-  public async UniTask<bool> ToVoid(PuzzleSlot baseSlot)
+  public async UniTask<(bool success, int count)> ToVoid(PuzzleSlot baseSlot)
   {
     var chainSlots = GetChainSlots(baseSlot);
     if (chainSlots.Count < 2)
     {
-      return false;
+      return (false, 0);
     }
 
     // 消す
@@ -108,7 +108,7 @@ public class PuzzleLevel : MonoBehaviour
     }
     await UniTask.WhenAll(tasks);
 
-    return true;
+    return (true, chainSlots.Count);
   }
 
   // 消えた後に再配置する
