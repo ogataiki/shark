@@ -120,7 +120,7 @@ public class ScoreData
   // ===================
   // 永続化
   // ===================
-  const string jsonSaveFileNameHeader = "4g30qn9gjiehn78";
+  const string _jsonSaveFileNameHeader = "4g30qn9gjiehn78";
   public static void Save(ScoreData scoreData, SaveDataKeys.ScoreDataKeyTypeEnum type, string addKey = "")
   {
     var key = SaveDataKeys.GetScoreDataKey(type);
@@ -129,13 +129,13 @@ public class ScoreData
     var json = JsonUtility.ToJson(scoreData);
     var jsonHash = StringUtil.GetHashMD5(json);
 
-    var jsonSavePath = $"{Application.persistentDataPath}/{jsonSaveFileNameHeader}_{key}";
+    var jsonSavePath = $"{Application.persistentDataPath}/{_jsonSaveFileNameHeader}_{key}";
     StreamWriter streamWriter = new StreamWriter(jsonSavePath);
     streamWriter.Write(json);
     streamWriter.Flush();
     streamWriter.Close();
 
-    var jsonHashSavePath = $"{Application.persistentDataPath}/{jsonSaveFileNameHeader}_{key}H";
+    var jsonHashSavePath = $"{Application.persistentDataPath}/{_jsonSaveFileNameHeader}_{key}H";
     streamWriter = new StreamWriter(jsonHashSavePath);
     streamWriter.Write(jsonHash);
     streamWriter.Flush();
@@ -150,7 +150,7 @@ public class ScoreData
     key += addKey;
 
     var saveHash = "";
-    var jsonHashSavePath = $"{Application.persistentDataPath}/{jsonSaveFileNameHeader}_{key}H";
+    var jsonHashSavePath = $"{Application.persistentDataPath}/{_jsonSaveFileNameHeader}_{key}H";
     if (File.Exists(jsonHashSavePath))
     {
       StreamReader streamReader;
@@ -160,7 +160,7 @@ public class ScoreData
     }
 
     var json = "";
-    var jsonSavePath = $"{Application.persistentDataPath}/{jsonSaveFileNameHeader}_{key}";
+    var jsonSavePath = $"{Application.persistentDataPath}/{_jsonSaveFileNameHeader}_{key}";
     if (File.Exists(jsonSavePath))
     {
       StreamReader streamReader;
