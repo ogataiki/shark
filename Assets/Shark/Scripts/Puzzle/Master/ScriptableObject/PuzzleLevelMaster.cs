@@ -164,6 +164,9 @@ public class PuzzleLevelMaster : ScriptableObject
     return (seed <= Complexity);
   }
 
+  // ?セルの数
+  [SerializeField]
+  public int QCount = 0;
 
 
   public void ClearCache()

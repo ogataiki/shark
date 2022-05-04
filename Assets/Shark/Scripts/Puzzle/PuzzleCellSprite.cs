@@ -48,6 +48,11 @@ public class PuzzleCellSprite : MonoBehaviour
     }
   }
 
+  public void ClickEnable(bool enable)
+  {
+    boxCollider.enabled = enable;
+  }
+
   public void OnClick()
   {
     if (_state != StateEnum.Idle) { return; }
@@ -58,7 +63,6 @@ public class PuzzleCellSprite : MonoBehaviour
   {
     ChangeState(StateEnum.PlayAnimation);
     animator.Play("ToVoid");
-    Debug.Log($"[PuzzleCellSprite] PlayAnimation ToVoid");
     await UniTask.DelayFrame(1); // ステートの反映に1フレームいるかも？
     var nameHash = animator.GetCurrentAnimatorStateInfo(0).fullPathHash;
     await UniTask.WaitWhile(() => {
@@ -71,7 +75,6 @@ public class PuzzleCellSprite : MonoBehaviour
   {
     ChangeState(StateEnum.PlayAnimation);
     animator.Play("OnActive");
-    Debug.Log($"[PuzzleCellSprite] PlayAnimation OnActive");
     await UniTask.DelayFrame(1); // ステートの反映に1フレームいるかも？
     var nameHash = animator.GetCurrentAnimatorStateInfo(0).fullPathHash;
     await UniTask.WaitWhile(() => {

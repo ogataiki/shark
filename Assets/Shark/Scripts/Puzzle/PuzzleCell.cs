@@ -9,9 +9,14 @@ public class PuzzleCell : MonoBehaviour
 {
   [Header("PuzzleLevelMaster.CellTypeEnum の値をindexとする")]
   [SerializeField] List<PuzzleCellSprite> sprites;
+  [SerializeField] PuzzleCellSprite spriteQ;
+  [SerializeField] Animator animator;
 
   PuzzleLevelMaster.CellTypeEnum _cellType;
   public PuzzleLevelMaster.CellTypeEnum CellType { get { return _cellType; } }
+
+  bool _QActive = false;
+  public bool QActive { get { return _QActive; } }
 
   float _spriteScale = 1f;
 
@@ -44,6 +49,9 @@ public class PuzzleCell : MonoBehaviour
       s.onClick.RemoveAllListeners();
       s.onClick.AddListener(OnClick);
     }
+
+    spriteQ.onClick.RemoveAllListeners();
+    spriteQ.onClick.AddListener(OnClick);
   }
 
   public void Init(PuzzleLevelMaster.CellTypeEnum cellType, float scale, PuzzleSlot slot)
@@ -57,6 +65,7 @@ public class PuzzleCell : MonoBehaviour
       s.Init(s.CellType == _cellType);
       s.transform.localScale = new Vector3(_spriteScale, _spriteScale, _spriteScale);
     }
+    spriteQ.ClickEnable(false);
   }
 
   public PuzzleCellSprite GetCellSprite()
@@ -67,7 +76,7 @@ public class PuzzleCell : MonoBehaviour
 
   public void OnClick(PuzzleCellSprite cellSprite)
   {
-    if (cellSprite.CellType != _cellType) { return; }
+    if (_cellType == PuzzleLevelMaster.CellTypeEnum.VOID) { return; }
     if (!IsIdle()) { return; }
 
     Debug.Log($"[PuzzleCell] OnClick[{cellSprite.CellType}]");
@@ -79,9 +88,40 @@ public class PuzzleCell : MonoBehaviour
     var currentSprite = GetCellSprite();
     if (currentSprite == null) { return; }
     ChangeState(StateEnum.PlayAnimation);
+    spriteQ.gameObject.SetActive(false);
     _cellType = PuzzleLevelMaster.CellTypeEnum.VOID;
     await currentSprite.PlayToVoid();
     await UniTask.WaitUntil(() => currentSprite.IsIdle());
     ChangeState(StateEnum.Idle);
+  }
+
+  public async UniTask QUpdate(bool active, bool fast = false)
+  {
+    if (spriteQ == null) { return; }
+    _QActive = active;
+    spriteQ.ClickEnable(active);
+
+    var animationName1 = active ? "Show" : "Hide";
+    var animationName2 = fast ? "Fast" : "";
+    animator.Play($"{animationName1}Q{animationName2}");
+    await UniTask.DelayFrame(1); // ステートの反映に1フレームいるかも？
+    var nameHash = animator.GetCurrentAnimatorStateInfo(0).fullPathHash;
+    await UniTask.WaitWhile(() => {
+      var currentAnimatorState = animator.GetCurrentAnimatorStateInfo(0);
+      return currentAnimatorState.fullPathHash == nameHash && (currentAnimatorState.normalizedTime < 1);
+    });
+    var currentSprite = GetCellSprite();
+    if (currentSprite == null) { return; }
+    if (active)
+    {
+      await currentSprite.PlayToVoid();
+    }
+    else
+    {
+      if (_cellType != PuzzleLevelMaster.CellTypeEnum.VOID)
+      {
+        await currentSprite.PlayOnActive();
+      }
+    }
   }
 }

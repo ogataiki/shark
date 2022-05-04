@@ -24,6 +24,8 @@ public class PuzzleLevel : MonoBehaviour
   List<PuzzleCell> _cellList = new List<PuzzleCell>();
   public List<PuzzleCell> CellList { get { return _cellList; } }
 
+  List<PuzzleCell> _QCellList = new List<PuzzleCell>();
+
   PuzzleLevelMaster _levelMasterData;
   public PuzzleLevelMaster LevelMasterData { get { return _levelMasterData; } }
 
@@ -126,6 +128,9 @@ public class PuzzleLevel : MonoBehaviour
     // 全てVOIDの縦軸があれば左に寄せる処理
     var verticalAllVoidTasks = LevelRemapVerticalAllVoid();
     await UniTask.WhenAll(verticalAllVoidTasks);
+
+    // Qセルの更新
+    await QCellUpdate();
   }
 
   // 縦一列の再配置
@@ -207,6 +212,37 @@ public class PuzzleLevel : MonoBehaviour
       tasks.Add(task);
     }
     return tasks;
+  }
+
+  // Qセルの更新
+  public async UniTask QCellUpdate()
+  {
+    if (_levelMasterData.QCount <= 0) { return; }
+
+    var tasks = new List<UniTask>();
+    foreach(var QCell in _QCellList)
+    {
+      var task = QCell.QUpdate(false);
+      tasks.Add(task);
+    }
+    await UniTask.WhenAll(tasks);
+    tasks.Clear();
+    _QCellList.Clear();
+
+    var candidates = _cellList
+      .Where(_ => _.CellType != PuzzleLevelMaster.CellTypeEnum.VOID)
+      .Where(_ => _.QActive == false)
+      .ToList();
+    if (candidates.Count <= 0) { return; }
+    var QCellNum = Math.Min(candidates.Count, _levelMasterData.QCount);
+    var randomList = MathUtil.LotRandomBox(candidates, UnityEngine.Random.Range(1, QCellNum));
+    foreach(var nextQCell in randomList)
+    {
+      _QCellList.Add(nextQCell);
+      var task = nextQCell.QUpdate(true);
+      tasks.Add(task);
+    }
+    await UniTask.WhenAll(tasks);
   }
 
   //=====================

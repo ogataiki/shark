@@ -136,16 +136,6 @@ public class PuzzleSlot : MonoBehaviour
       });
   }
 
-  void MoveCellVertical()
-  {
-
-  }
-
-  void MoveCellHorizontal()
-  {
-
-  }
-
   public PuzzleCellSprite GetCellSprite()
   {
     if (_cell == null) { return null; }
