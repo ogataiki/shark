@@ -11,13 +11,16 @@ public class PuzzleLevelMaster : ScriptableObject
 
   // 色数 最低2は必要 多いほど難しくなる
   // セルの種類
+  [Header("セル種類 STONEは指定しなくても必ず含みます")]
   [SerializeField]
   List<CellTypeEnum> CellTypeList = new List<CellTypeEnum>();
   public enum CellTypeEnum
   {
     RANDOM = -1,
     VOID = 0,
+    STONE = 1,
     TEST_PLAIN, TEST_RED, TEST_GREEN, TEST_YELLOW,
+    MACARON, CHERRY, CAKE,
   }
   List<CellTypeEnum> CellTypeListCache = new List<CellTypeEnum>();
   public List<CellTypeEnum> GetCellTypeList()
@@ -30,13 +33,24 @@ public class PuzzleLevelMaster : ScriptableObject
     if (CellTypeListCache.Count <= 0)
     {
       CellTypeListCache = new List<CellTypeEnum>();
+
+      // 原石は固定で入れる
+      CellTypeListCache.Add(CellTypeEnum.STONE);
+
+      // ランダム指定の場合に使えるセル種類の取得
       var randomCells = new List<CellTypeEnum>();
       foreach (CellTypeEnum Value in Enum.GetValues(typeof(CellTypeEnum)))
       {
         if (Value == CellTypeEnum.RANDOM) { continue; }
         if (Value == CellTypeEnum.VOID) { continue; }
+        if (Value == CellTypeEnum.STONE) { continue; }
+        if (Value == CellTypeEnum.TEST_PLAIN) { continue; }
+        if (Value == CellTypeEnum.TEST_RED) { continue; }
+        if (Value == CellTypeEnum.TEST_YELLOW) { continue; }
+        if (Value == CellTypeEnum.TEST_GREEN) { continue; }
         randomCells.Add(Value);
       }
+
       var randomPool = new List<CellTypeEnum>(randomCells);
       foreach (var type in CellTypeList)
       {
@@ -70,12 +84,17 @@ public class PuzzleLevelMaster : ScriptableObject
       Debug.LogError($"セル種別の設定が一つもありません");
       return CellTypeEnum.VOID;
     }
-    return cellTypeList[UnityEngine.Random.Range(0, cellTypeList.Count)];
+    var list = cellTypeList
+      .Where(_ => _ != CellTypeEnum.STONE)
+      .Where(_ => _ != CellTypeEnum.VOID)
+      .Where(_ => _ != CellTypeEnum.RANDOM).ToList();
+    return list[UnityEngine.Random.Range(0, list.Count)];
   }
   public List<CellTypeEnum> CreateRandomCellTypes()
   {
     var cellTypeList = GetCellTypeList();
     var totalCellNum = GetCellCountNum();
+    var totalStoneCellNum = UnityEngine.Random.Range(StoneCountMin, StoneCountMax);
 
     // 最初に全色2個を保証する
     var requireCellTypes = new List<CellTypeEnum>();
@@ -83,6 +102,15 @@ public class PuzzleLevelMaster : ScriptableObject
     {
       requireCellTypes.Add(requireType);
       requireCellTypes.Add(requireType);
+
+      // 原石セルは必須数を指定されているので調整
+      if (requireType == CellTypeEnum.STONE)
+      {
+        for (int i = 2; i < totalStoneCellNum; i++)
+        {
+          requireCellTypes.Add(requireType);
+        }
+      }
     }
 
     // 難易度を考慮したランダム配置を生成する
@@ -168,6 +196,10 @@ public class PuzzleLevelMaster : ScriptableObject
   [SerializeField]
   public int QCount = 0;
 
+  // STONEセルの数
+  [SerializeField]
+  public int StoneCountMin = 2;
+  public int StoneCountMax = 10;
 
   public void ClearCache()
   {

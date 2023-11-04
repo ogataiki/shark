@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: CellIcon
+  m_EditorData:
+    serializedVersion: 2
+    textureSettings:
+      serializedVersion: 2
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 2048
+      textureCompression: 0
+      filterMode: 1
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 0
+      sRGB: 1
+    platformSettings: []
+    packingSettings:
+      serializedVersion: 2
+      padding: 4
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 1
+      enableTightPacking: 1
+      enableAlphaDilation: 0
+    secondaryTextureSettings: {}
+    variantMultiplier: 1
+    packables:
+    - {fileID: 102900000, guid: c2ef7e7e2118e426eb7fb80f140ddbec, type: 3}
+    bindAsDefault: 1
+    isAtlasV2: 0
+    cachedData: {fileID: 0}
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites:
+  - {fileID: 21300000, guid: 82c3101146f524aec99fce4d4b8a5485, type: 3}
+  - {fileID: 21300000, guid: f390fe125f6b14e71adb360fd10acefb, type: 3}
+  - {fileID: 21300000, guid: 60701a33c123245b782527d9e9cb7ab7, type: 3}
+  - {fileID: 21300000, guid: c0821c057c6984632bab7c266fd17947, type: 3}
+  - {fileID: 21300000, guid: dd90aa5ff3370478f9d8be59a31802a2, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - stone_128
+  - macaron_128
+  - cake_128
+  - Q
+  - cherry_128
+  m_RenderDataMap: {}
+  m_Tag: CellIcon
+  m_IsVariant: 0

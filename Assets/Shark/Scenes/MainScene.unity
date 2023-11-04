@@ -313,18 +313,12 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e7398cf07c368431f9c8234af56eeb28, type: 2}
   - {fileID: 11400000, guid: f923c8bfd4a8f433a9aebb08bb17280e, type: 2}
   - {fileID: 11400000, guid: 93aafe7fe0fbc43658e1184b0f1b451a, type: 2}
-  - {fileID: 11400000, guid: 3ec7bb880adc04cc8a14a0fd4cf2fbd0, type: 2}
   - {fileID: 11400000, guid: f12fabb08867343d0a0d8e3bc2a429d2, type: 2}
   - {fileID: 11400000, guid: 7ce80393186a348f489b0fc5226db064, type: 2}
-  - {fileID: 11400000, guid: 64cb4a4dec78f4c8f886182cfae7aae2, type: 2}
   - {fileID: 11400000, guid: 2a34ec3c3d5534642af79ce7eaf1cb94, type: 2}
   - {fileID: 11400000, guid: ceb316a79f5024f608afb0f3cc204523, type: 2}
-  - {fileID: 11400000, guid: 9ecb2872b5ca34f65b818529ce7b0b96, type: 2}
   - {fileID: 11400000, guid: bc71951b739c643dfb7598f746c84d64, type: 2}
   - {fileID: 11400000, guid: 54a7b234ee0444b659d3801157da4da0, type: 2}
-  - {fileID: 11400000, guid: 1412a7956cab54fb884022cfbf3b8a67, type: 2}
-  - {fileID: 11400000, guid: 61f359514375a447791cd85e7b23f45f, type: 2}
-  - {fileID: 11400000, guid: cdcf338ce02574ace82e515db1e39b8f, type: 2}
   gameUI: {fileID: 1982207986}
   currentLevelText: {fileID: 1839327618}
   playCountText: {fileID: 1115461995}
