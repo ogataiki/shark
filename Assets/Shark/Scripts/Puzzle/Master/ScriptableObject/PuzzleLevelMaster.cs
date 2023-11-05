@@ -34,9 +34,6 @@ public class PuzzleLevelMaster : ScriptableObject
     {
       CellTypeListCache = new List<CellTypeEnum>();
 
-      // 原石は固定で入れる
-      CellTypeListCache.Add(CellTypeEnum.STONE);
-
       // ランダム指定の場合に使えるセル種類の取得
       var randomCells = new List<CellTypeEnum>();
       foreach (CellTypeEnum Value in Enum.GetValues(typeof(CellTypeEnum)))

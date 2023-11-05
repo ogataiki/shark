@@ -25,12 +25,26 @@ public class ScoreData
     public List<ToVoid> toVoidList;
     public int score;
 
+    private int CalcScore(PuzzleLevelMaster.CellTypeEnum type, int count)
+    {
+      var score = 0;
+      switch(type)
+      {
+        case PuzzleLevelMaster.CellTypeEnum.STONE: score = 0; break;
+        case PuzzleLevelMaster.CellTypeEnum.MACARON: score = Mathf.RoundToInt(count * (level * 1.0f)); break;
+        case PuzzleLevelMaster.CellTypeEnum.CHERRY: score = Mathf.RoundToInt(count * (level * 1.5f)); break;
+        case PuzzleLevelMaster.CellTypeEnum.CAKE: score = Mathf.RoundToInt(count * (level * 2.0f)); break;
+        default: score = count; break;
+      }
+      return score;
+    }
+
     public void AddToVoid(PuzzleLevelMaster.CellTypeEnum type, int voidCount)
     {
       count += 1;
       var toVoid = GetToVoid(type);
       toVoid.count += voidCount;
-      score += (int)Math.Pow(voidCount, 1.2) * level;
+      score += CalcScore(type, voidCount);
     }
 
     public ToVoid GetToVoid(PuzzleLevelMaster.CellTypeEnum type)
