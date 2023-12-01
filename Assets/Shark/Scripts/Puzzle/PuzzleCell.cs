@@ -59,6 +59,7 @@ public class PuzzleCell : MonoBehaviour
     _slot = slot;
     _cellType = cellType;
     _spriteScale = scale;
+
     foreach (var s in sprites)
     {
       s.gameObject.SetActive(true);

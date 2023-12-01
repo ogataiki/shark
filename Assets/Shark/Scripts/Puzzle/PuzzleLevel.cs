@@ -74,7 +74,7 @@ public class PuzzleLevel : MonoBehaviour
         cell.onClick.RemoveAllListeners();
         _cellList.Add(cell);
 
-        slot.PutOnCell(cell);
+        slot.PutOnCell(cell, cellScale * 0.737f);
       }
     }
   }

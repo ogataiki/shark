@@ -38,17 +38,9 @@ SpriteAtlas:
     cachedData: {fileID: 0}
   m_MasterAtlas: {fileID: 0}
   m_PackedSprites:
-  - {fileID: 21300000, guid: 82c3101146f524aec99fce4d4b8a5485, type: 3}
-  - {fileID: 21300000, guid: f390fe125f6b14e71adb360fd10acefb, type: 3}
-  - {fileID: 21300000, guid: 60701a33c123245b782527d9e9cb7ab7, type: 3}
   - {fileID: 21300000, guid: c0821c057c6984632bab7c266fd17947, type: 3}
-  - {fileID: 21300000, guid: dd90aa5ff3370478f9d8be59a31802a2, type: 3}
   m_PackedSpriteNamesToIndex:
-  - stone_128
-  - macaron_128
-  - cake_128
   - Q
-  - cherry_128
   m_RenderDataMap: {}
   m_Tag: CellIcon
   m_IsVariant: 0

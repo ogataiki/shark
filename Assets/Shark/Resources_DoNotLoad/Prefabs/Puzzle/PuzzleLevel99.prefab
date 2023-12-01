@@ -169,10 +169,7 @@ MonoBehaviour:
   slotHorizontalCount: 9
   slotVerticalCount: 11
   cellParent: {fileID: 9144238523762046504}
-  cellOffset: 0.45
-  cellHorizontalCount: 9
-  cellVerticalCount: 11
-  cellScale: 0.43
+  cellScale: 0.32
   onClickSlot:
     m_PersistentCalls:
       m_Calls: []

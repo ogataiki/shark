@@ -29,6 +29,8 @@ public class PuzzleSlot : MonoBehaviour
     }
   }
 
+  [SerializeField] Transform cellBackGround = default;
+
   int _indexX = 0;
   public int IndexX { get { return _indexX; } }
   int _indexY = 0;
@@ -85,12 +87,14 @@ public class PuzzleSlot : MonoBehaviour
     _indexY = indexY;
   }
 
-  public void PutOnCell(PuzzleCell cell)
+  public void PutOnCell(PuzzleCell cell, float slotScale)
   {
     _cell = cell;
     _cell.transform.position = this.transform.position;
     _cell.onClick.RemoveAllListeners();
     _cell.onClick.AddListener(OnClick);
+
+    cellBackGround.localScale = new Vector3(slotScale, slotScale, slotScale);
   }
 
   public async UniTask ToVoid()
