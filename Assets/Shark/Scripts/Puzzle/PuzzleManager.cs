@@ -19,7 +19,6 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   [SerializeField] TextMeshProUGUI playCountText;
   [SerializeField] TextMeshProUGUI totalScoreText;
   [SerializeField] TextMeshProUGUI currentScoreText;
-  [SerializeField] TextMeshProUGUI dtExpectText;
 
   [SerializeField] GameObject gameClearUI;
   [SerializeField] Button nextLevelButton;
@@ -30,7 +29,6 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   const int _startLevel = 1;
   int _currentLevel = _startLevel;
   int _playCount = 0;
-  int _stoneCount = 0;
   PuzzleLevel _currentPuzzleLevel = null;
 
   public enum StateEnum
@@ -64,7 +62,6 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
 
     GameStart();
     ResetPlayCount();
-    ResetStoneCount();
   }
 
   public void OnClickNextLevelButton()
@@ -130,7 +127,6 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
 
     currentScoreText.text = $"スコア\n{ScoreManager.Instance.CurrentScoreCache.GetScore()}";
     totalScoreText.text = $"最高スコア\n{ ScoreManager.Instance.TopScore.GetScore()}";
-    UpdateStoneRate();
   }
   public void DeployNextLevel()
   {
@@ -142,7 +138,6 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   {
     ScoreManager.Instance.ClearCurrentScoreCache();
     ResetPlayCount();
-    ResetStoneCount();
 
     _currentLevel = _startLevel;
     DeployCurrentLevel();
@@ -167,16 +162,16 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
   {
     var toVoidCellType = slot.CellType;
 
+    if (toVoidCellType == PuzzleLevelMaster.CellTypeEnum.VOID)
+    {
+      return;
+    }
+
     var toVoidResult = await level.ToVoid(slot);
     if (toVoidResult.success == false)
     {
       // TODO : 消せないよということを表す何らかの表現を入れる
       return;
-    }
-
-    if (toVoidCellType == PuzzleLevelMaster.CellTypeEnum.STONE)
-    {
-      AddStoneCount(toVoidResult.count);
     }
 
     // スコア登録
@@ -210,6 +205,9 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
       if (slot.CellType == PuzzleLevelMaster.CellTypeEnum.VOID) { continue; }
 
       voidAll = false;
+
+      // 一つでも宝箱セルが見つかったらゲーム有効
+      if (slot.CellType == PuzzleLevelMaster.CellTypeEnum.STONE) { return GameStateEnum.Idle; }
 
       // 一つでも連結セルが見つかったらゲーム有効
 
@@ -273,41 +271,6 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
     _playCount = 0;
     playCountText.text = $"操作 {_playCount} 回";
   }
-
-  public float CalcDiamondTimeRate()
-  {
-    return _stoneCount * 1f;
-  }
-  public void AddStoneCount(int count)
-  {
-    _stoneCount += count;
-    UpdateStoneRate();
-  }
-  public void UpdateStoneRate()
-  {
-    var rate = CalcDiamondTimeRate();
-    var strFormat = "F0";
-    var rateStr = rate.ToString(strFormat);
-    if (rate >= 100f)
-    {
-      rateStr = $"<color=red>{rate.ToString(strFormat)}</color>";
-    }
-    else if (rate > 50f)
-    {
-      rateStr = $"<color=orange>{rate.ToString(strFormat)}</color>";
-    }
-    else if (rate > 20f)
-    {
-      rateStr = $"<color=yellow>{rate.ToString(strFormat)}</color>";
-    }
-    dtExpectText.text = $"ダイヤモンドタイム発生率 {rateStr} %";
-  }
-  public void ResetStoneCount()
-  {
-    _stoneCount = 0;
-    UpdateStoneRate();
-  }
-
 
 #if DEBUG
 

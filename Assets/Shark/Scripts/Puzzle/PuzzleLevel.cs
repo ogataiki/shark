@@ -96,7 +96,7 @@ public class PuzzleLevel : MonoBehaviour
   public async UniTask<(bool success, int count)> ToVoid(PuzzleSlot baseSlot)
   {
     var chainSlots = GetChainSlots(baseSlot);
-    if (chainSlots.Count < 2)
+    if (chainSlots.Count < 2 && baseSlot.CellType != PuzzleLevelMaster.CellTypeEnum.STONE)
     {
       return (false, 0);
     }
