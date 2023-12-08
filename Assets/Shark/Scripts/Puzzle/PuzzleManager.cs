@@ -9,22 +9,23 @@ using UnityEngine.UI;
 
 public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
 {
-  [SerializeField] List<PuzzleLevel> puzzleLevelPrefabList;
-  [SerializeField] List<PuzzleLevelMaster> puzzleLevelMasterList;
+  [SerializeField] List<PuzzleLevel> puzzleLevelPrefabList = default;
+  [SerializeField] List<PuzzleLevelMaster> puzzleLevelMasterList = default;
 
+  [SerializeField] FullScreenEffect fullScreenEffect = default;
 
   // UI
-  [SerializeField] GameObject gameUI;
-  [SerializeField] TextMeshProUGUI currentLevelText;
-  [SerializeField] TextMeshProUGUI playCountText;
-  [SerializeField] TextMeshProUGUI totalScoreText;
-  [SerializeField] TextMeshProUGUI currentScoreText;
+  [SerializeField] GameObject gameUI = default;
+  [SerializeField] TextMeshProUGUI currentLevelText = default;
+  [SerializeField] TextMeshProUGUI playCountText = default;
+  [SerializeField] TextMeshProUGUI totalScoreText = default;
+  [SerializeField] TextMeshProUGUI currentScoreText = default;
 
-  [SerializeField] GameObject gameClearUI;
-  [SerializeField] Button nextLevelButton;
+  [SerializeField] GameObject gameClearUI = default;
+  [SerializeField] Button nextLevelButton = default;
 
-  [SerializeField] GameObject gameOverUI;
-  [SerializeField] Button retryLevelButton;
+  [SerializeField] GameObject gameOverUI = default;
+  [SerializeField] Button retryLevelButton = default;
 
   const int _startLevel = 1;
   int _currentLevel = _startLevel;
@@ -174,6 +175,12 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
       return;
     }
 
+    // 宝箱処理
+    if (toVoidCellType == PuzzleLevelMaster.CellTypeEnum.STONE)
+    {
+      await OpenChest(toVoidResult.count);
+    }
+
     // スコア登録
     ScoreManager.Instance.CurrentScoreCache.EntryPlayData(_currentLevel, toVoidCellType, toVoidResult.count);
     currentScoreText.text = $"スコア\n{ScoreManager.Instance.CurrentScoreCache.GetScore()}";
@@ -191,6 +198,15 @@ public class PuzzleManager : SingletonMonoBehaviour<PuzzleManager>
     }
   }
 
+  public async UniTask OpenChest(int count)
+  {
+    for (int i = 0; i < count; i++)
+    {
+      // TODO : ダイヤモンドタイム突入とハズレ時の獲得スコアなど後ほど
+      await fullScreenEffect.PlayOpenChest(false, () => {
+      });
+    }
+  }
 
   public enum GameStateEnum
   {
